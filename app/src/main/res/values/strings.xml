@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">AgentDroid</string>
+
+    <string name="accessibility_service_description">
+        AgentDroid는 화면의 내용을 인식하고 사용자의 명령을 수행하기 위해 접근성 권한을 필요로 합니다.
+        이 권한을 통해 화면의 텍스트를 읽고 터치 동작을 수행합니다.
+    </string>
+</resources>
