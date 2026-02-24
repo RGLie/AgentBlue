@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1057609791463",
+    "project_id": "agentblue-d83e5",
+    "storage_bucket": "agentblue-d83e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057609791463:android:6ec422c47f297cc2ee6f42",
+        "android_client_info": {
+          "package_name": "com.example.agent_blue_desktop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAP23MArskeNuV2SpSpjlCFmGGJfK--e5U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057609791463:android:097f63840c52ec16ee6f42",
+        "android_client_info": {
+          "package_name": "com.example.agentdroid"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAP23MArskeNuV2SpSpjlCFmGGJfK--e5U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

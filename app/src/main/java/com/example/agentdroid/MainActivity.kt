@@ -1,28 +1,428 @@
 package com.example.agentdroid
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.agentdroid.data.ExecutionEntity
+import com.example.agentdroid.model.AgentStatus
+import com.example.agentdroid.model.StepLog
+import com.example.agentdroid.ui.theme.AgentBlue
 import com.example.agentdroid.ui.theme.AgentDroidTheme
+import com.example.agentdroid.ui.theme.StatusCancelled
+import com.example.agentdroid.ui.theme.StatusCompleted
+import com.example.agentdroid.ui.theme.StatusFailed
+import com.example.agentdroid.ui.theme.StatusIdle
+import com.example.agentdroid.ui.theme.StepError
+import com.example.agentdroid.ui.theme.StepSuccess
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        AgentStateManager.init(this)
+
         enableEdgeToEdge()
         setContent {
             AgentDroidTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                AgentDroidApp(
+                    onOpenAccessibilitySettings = {
+                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    },
+                    onOpenOverlaySettings = {
+                        startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AgentDroidApp(
+    onOpenAccessibilitySettings: () -> Unit,
+    onOpenOverlaySettings: () -> Unit
+) {
+    val history by AgentStateManager.getHistoryFlow().collectAsState(initial = emptyList())
+    var showClearDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("AgentDroid", fontWeight = FontWeight.Bold)
+                },
+                actions = {
+                    if (history.isNotEmpty()) {
+                        IconButton(onClick = { showClearDialog = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_robot),
+                                contentDescription = "기록 삭제",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item { SettingsCard(onOpenAccessibilitySettings, onOpenOverlaySettings) }
+
+            if (history.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "실행 기록",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "${history.size}건",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                items(history, key = { it.id }) { record ->
+                    HistoryCard(record)
+                }
+            } else {
+                item { EmptyState() }
+            }
+        }
+    }
+
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title = { Text("기록 삭제") },
+            text = { Text("모든 실행 기록을 삭제하시겠습니까?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    AgentStateManager.clearHistory()
+                    showClearDialog = false
+                }) {
+                    Text("삭제", color = StatusFailed)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+}
+
+// --- 설정 카드 ---
+
+@Composable
+fun SettingsCard(
+    onOpenAccessibilitySettings: () -> Unit,
+    onOpenOverlaySettings: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                "서비스 설정",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "AgentDroid를 사용하려면 아래 설정을 활성화해주세요.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = onOpenAccessibilitySettings,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = AgentBlue),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("접근성 서비스 설정", modifier = Modifier.padding(vertical = 4.dp))
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = onOpenOverlaySettings,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("화면 위에 표시 권한 설정", modifier = Modifier.padding(vertical = 4.dp))
+            }
+        }
+    }
+}
+
+// --- 실행 기록 카드 ---
+
+@Composable
+fun HistoryCard(record: ExecutionEntity) {
+    var expanded by remember { mutableStateOf(false) }
+    val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
+    val steps = remember(record.stepsJson) { AgentStateManager.parseStepsFromJson(record.stepsJson) }
+
+    val status = try { AgentStatus.valueOf(record.status) } catch (_: Exception) { AgentStatus.IDLE }
+    val statusColor = when (status) {
+        AgentStatus.COMPLETED -> StatusCompleted
+        AgentStatus.FAILED -> StatusFailed
+        AgentStatus.CANCELLED -> StatusCancelled
+        else -> StatusIdle
+    }
+    val statusLabel = when (status) {
+        AgentStatus.COMPLETED -> "완료"
+        AgentStatus.FAILED -> "실패"
+        AgentStatus.CANCELLED -> "취소"
+        else -> "기타"
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        record.command,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = if (expanded) Int.MAX_VALUE else 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            dateFormat.format(Date(record.startTime)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "  ·  ${steps.size}스텝",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (record.endTime != null) {
+                            val duration = (record.endTime - record.startTime) / 1000
+                            Text(
+                                "  ·  ${duration}초",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = statusColor.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        statusLabel,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        color = statusColor,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            if (!record.resultMessage.isNullOrEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    record.resultMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded && steps.isNotEmpty(),
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column {
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(Modifier.height(12.dp))
+
+                    steps.forEach { stepLog ->
+                        StepLogRow(stepLog)
+                        Spacer(Modifier.height(6.dp))
+                    }
+                }
+            }
+
+            if (steps.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (expanded) "접기" else "상세 보기 (${steps.size}스텝)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AgentBlue,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.align(Alignment.End)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun StepLogRow(stepLog: StepLog) {
+    val statusColor = when {
+        stepLog.actionType == "DONE" -> StatusCompleted
+        stepLog.actionType == "ERROR" -> StepError
+        stepLog.success -> StepSuccess
+        else -> StatusFailed
+    }
+
+    val label = when (stepLog.actionType.uppercase()) {
+        "CLICK" -> "TAP"
+        "TYPE" -> "TYPE"
+        "SCROLL" -> "SCROLL"
+        "BACK" -> "BACK"
+        "DONE" -> "DONE"
+        "ERROR" -> "ERR"
+        else -> stepLog.actionType
+    }
+
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = statusColor.copy(alpha = 0.15f)
+            ) {
+                Text(
+                    label,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    color = statusColor,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(Modifier.width(8.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Step ${stepLog.step}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (stepLog.targetText != null) {
+                        Text(
+                            "  →  ${stepLog.targetText}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                if (!stepLog.reasoning.isNullOrEmpty()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        stepLog.reasoning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -30,18 +430,28 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+// --- 빈 상태 ---
 
-@Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    AgentDroidTheme {
-        Greeting("Android")
+fun EmptyState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("🤖", fontSize = 48.sp)
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "아직 실행 기록이 없습니다",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "플로팅 버튼을 눌러 첫 명령을 시작해보세요",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        )
     }
 }

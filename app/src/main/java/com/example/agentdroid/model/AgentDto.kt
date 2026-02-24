@@ -27,10 +27,20 @@ data class Choice(
     val message: OpenAiMessage
 )
 
-// 3. AI가 최종적으로 뱉을 JSON 내용을 담을 객체 (우리가 쓸 진짜 데이터)
 data class LlmAction(
-    @SerializedName("action_type") val actionType: String, // "CLICK" 또는 "TYPE"
-    @SerializedName("target_text") val targetText: String?, // 찾을 대상 (힌트 텍스트 등)
-    @SerializedName("input_text") val inputText: String?, // [추가] 타이핑할 내용
+    @SerializedName("action_type") val actionType: String,
+    @SerializedName("target_text") val targetText: String?,
+    @SerializedName("target_id") val targetId: String?,
+    @SerializedName("input_text") val inputText: String?,
     @SerializedName("reasoning") val reasoning: String?
-)
+) {
+    fun isDone(): Boolean = actionType.uppercase() == "DONE"
+
+    fun toHistoryEntry(step: Int, success: Boolean): String {
+        val status = if (success) "SUCCESS" else "FAILED"
+        return "Step $step [$status]: $actionType" +
+                (targetText?.let { " on '$it'" } ?: "") +
+                (inputText?.let { " with text '$it'" } ?: "") +
+                " — $reasoning"
+    }
+}
