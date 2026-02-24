@@ -1,12 +1,9 @@
 package com.example.agentdroid.service
 
 import android.util.Log
-import com.example.agentdroid.BuildConfig
 import com.example.agentdroid.model.LlmAction
-import com.example.agentdroid.model.OpenAiMessage
-import com.example.agentdroid.model.OpenAiRequest
 import com.example.agentdroid.model.UiNode
-import com.example.agentdroid.network.RetrofitClient
+import com.example.agentdroid.network.LlmClient
 import com.google.gson.Gson
 
 class ScreenAnalyzer(
@@ -89,28 +86,14 @@ class ScreenAnalyzer(
                 append(uiJson)
             }
 
-            val request = OpenAiRequest(
-                messages = listOf(
-                    OpenAiMessage("system", SYSTEM_PROMPT),
-                    OpenAiMessage("user", userMessage)
-                )
-            )
+            val result = LlmClient.chat(SYSTEM_PROMPT, userMessage)
 
-            val apiKey = "Bearer ${BuildConfig.OPENAI_API_KEY}"
-            val response = RetrofitClient.apiService.getAction(apiKey, request)
-
-            if (!response.isSuccessful) {
-                val errorMsg = "API 오류: ${response.code()} ${response.errorBody()?.string()}"
-                Log.e(TAG, errorMsg)
-                return Result.failure(Exception(errorMsg))
+            if (result.isFailure) {
+                return Result.failure(result.exceptionOrNull()!!)
             }
 
-            val content = response.body()?.choices?.firstOrNull()?.message?.content
+            val content = result.getOrThrow()
             Log.d(TAG, "AI 응답: $content")
-
-            if (content == null) {
-                return Result.failure(Exception("AI 응답이 비어있습니다."))
-            }
 
             val action = parseAction(content)
             Log.d(TAG, "AI 결정: ${action.actionType} -> text='${action.targetText}' id='${action.targetId}' (이유: ${action.reasoning})")

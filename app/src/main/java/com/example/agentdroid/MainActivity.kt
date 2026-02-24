@@ -10,6 +10,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,18 +24,28 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,6 +53,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,11 +63,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.agentdroid.data.ExecutionEntity
+import com.example.agentdroid.data.ModelPreferences
 import com.example.agentdroid.model.AgentStatus
+import com.example.agentdroid.model.AiProvider
 import com.example.agentdroid.model.StepLog
 import com.example.agentdroid.ui.theme.AgentBlue
 import com.example.agentdroid.ui.theme.AgentDroidTheme
@@ -65,6 +81,7 @@ import com.example.agentdroid.ui.theme.StatusFailed
 import com.example.agentdroid.ui.theme.StatusIdle
 import com.example.agentdroid.ui.theme.StepError
 import com.example.agentdroid.ui.theme.StepSuccess
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -74,6 +91,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         AgentStateManager.init(this)
+
+        val defaultKey = try { BuildConfig.OPENAI_API_KEY } catch (_: Exception) { "" }
+        ModelPreferences.init(this, defaultKey)
 
         enableEdgeToEdge()
         setContent {
@@ -110,7 +130,7 @@ fun AgentDroidApp(
                     if (history.isNotEmpty()) {
                         IconButton(onClick = { showClearDialog = true }) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_robot),
+                                Icons.Default.Delete,
                                 contentDescription = "기록 삭제",
                                 modifier = Modifier.size(20.dp)
                             )
@@ -130,6 +150,7 @@ fun AgentDroidApp(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item { ModelSettingsCard() }
             item { SettingsCard(onOpenAccessibilitySettings, onOpenOverlaySettings) }
 
             if (history.isNotEmpty()) {
@@ -180,6 +201,229 @@ fun AgentDroidApp(
                 }
             }
         )
+    }
+}
+
+// --- AI 모델 설정 카드 ---
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ModelSettingsCard() {
+    var expanded by remember { mutableStateOf(false) }
+
+    var selectedProvider by remember { mutableStateOf(ModelPreferences.getProvider()) }
+    var selectedModelId by remember { mutableStateOf(ModelPreferences.getModel()) }
+    var apiKeyText by remember { mutableStateOf(ModelPreferences.getApiKey(ModelPreferences.getProvider())) }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var modelDropdownExpanded by remember { mutableStateOf(false) }
+    var savedMessage by remember { mutableStateOf<String?>(null) }
+
+    val currentDisplayModel = selectedProvider.models
+        .find { it.id == selectedModelId }?.displayName ?: selectedModelId
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "AI Agent 모델 설정",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "${selectedProvider.displayName} · $currentDisplayModel",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    if (expanded) "접기" else "변경",
+                    color = AgentBlue,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+            }
+
+            if (!ModelPreferences.hasApiKey() && !expanded) {
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = StatusFailed.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        "API 키를 설정해주세요",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        color = StatusFailed,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column {
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        "프로바이더",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AiProvider.entries.forEach { provider ->
+                            FilterChip(
+                                selected = selectedProvider == provider,
+                                onClick = {
+                                    selectedProvider = provider
+                                    selectedModelId = ModelPreferences.getModelForProvider(provider)
+                                    apiKeyText = ModelPreferences.getApiKey(provider)
+                                    savedMessage = null
+                                },
+                                label = { Text(provider.displayName, fontSize = 13.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = AgentBlue.copy(alpha = 0.15f),
+                                    selectedLabelColor = AgentBlue
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        "모델",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    ExposedDropdownMenuBox(
+                        expanded = modelDropdownExpanded,
+                        onExpandedChange = { modelDropdownExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = currentDisplayModel,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelDropdownExpanded)
+                            },
+                            modifier = Modifier
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+                        ExposedDropdownMenu(
+                            expanded = modelDropdownExpanded,
+                            onDismissRequest = { modelDropdownExpanded = false }
+                        ) {
+                            selectedProvider.models.forEach { model ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            model.displayName,
+                                            fontWeight = if (model.id == selectedModelId) FontWeight.SemiBold else FontWeight.Normal
+                                        )
+                                    },
+                                    onClick = {
+                                        selectedModelId = model.id
+                                        modelDropdownExpanded = false
+                                        savedMessage = null
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        "API Key",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = apiKeyText,
+                        onValueChange = {
+                            apiKeyText = it
+                            savedMessage = null
+                        },
+                        placeholder = { Text("API 키를 입력하세요") },
+                        singleLine = true,
+                        visualTransformation = if (passwordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        trailingIcon = {
+                            TextButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Text(
+                                    if (passwordVisible) "숨기기" else "보기",
+                                    fontSize = 12.sp,
+                                    color = AgentBlue
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            ModelPreferences.save(selectedProvider, selectedModelId, apiKeyText)
+                            savedMessage = "설정이 저장되었습니다"
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = AgentBlue),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("저장", modifier = Modifier.padding(vertical = 4.dp))
+                    }
+
+                    savedMessage?.let { msg ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            msg,
+                            color = StatusCompleted,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        LaunchedEffect(msg) {
+                            delay(2500)
+                            savedMessage = null
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

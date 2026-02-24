@@ -21,8 +21,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         val properties = Properties()
-        properties.load(project.rootProject.file("local.properties").inputStream())
-        buildConfigField("String", "OPENAI_API_KEY", properties.getProperty("OPENAI_API_KEY"))
+        val localPropertiesFile = project.rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            properties.load(localPropertiesFile.inputStream())
+        }
+        val apiKey = properties.getProperty("OPENAI_API_KEY", "").trim('"')
+        buildConfigField("String", "OPENAI_API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {

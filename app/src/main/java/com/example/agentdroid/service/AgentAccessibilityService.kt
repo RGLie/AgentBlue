@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.example.agentdroid.AgentStateManager
+import com.example.agentdroid.data.ModelPreferences
 import com.example.agentdroid.model.AgentStatus
 import com.example.agentdroid.model.StepLog
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +39,7 @@ class AgentAccessibilityService : AccessibilityService() {
         Log.d(TAG, "Service Connected!")
 
         AgentStateManager.init(this)
+        ModelPreferences.init(this)
 
         floatingPanelManager = FloatingPanelManager(this)
 
