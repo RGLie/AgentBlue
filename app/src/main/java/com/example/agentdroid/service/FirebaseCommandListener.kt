@@ -1,31 +1,42 @@
 package com.example.agentdroid.service
 
 import android.util.Log
+import com.example.agentdroid.data.SessionPreferences
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.Query
 
 /**
- * Firestore의 commands 컬렉션을 실시간으로 리스닝하여
+ * Firestore의 세션 기반 commands 컬렉션을 실시간으로 리스닝하여
  * 새로운 명령(status == "pending")을 감지하고 AgentAccessibilityService로 전달합니다.
+ *
+ * 세션이 페어링된 경우 sessions/{sessionId}/commands/ 를 리스닝하고,
+ * 페어링되지 않은 경우 기존 commands/ 컬렉션을 폴백으로 리스닝합니다.
  */
 class FirebaseCommandListener(
     private val accessibilityService: AgentAccessibilityService
 ) {
     companion object {
         private const val TAG = "FirebaseCmdListener"
-        private const val COLLECTION_COMMANDS = "commands"
     }
 
     private val firestore = FirebaseFirestore.getInstance()
     private var listenerRegistration: ListenerRegistration? = null
 
-    fun startListening() {
-        Log.d(TAG, "Firestore 명령 리스닝 시작")
+    private fun getCommandsPath(): String {
+        val sessionId = SessionPreferences.getSessionId()
+        return if (sessionId != null) {
+            "sessions/$sessionId/commands"
+        } else {
+            "commands"
+        }
+    }
 
-        listenerRegistration = firestore.collection(COLLECTION_COMMANDS)
+    fun startListening() {
+        val path = getCommandsPath()
+        Log.d(TAG, "Firestore 명령 리스닝 시작: $path")
+
+        listenerRegistration = firestore.collection(path)
             .whereEqualTo("status", "pending")
-            // .orderBy("createdAt", Query.Direction.ASCENDING) // 복합 색인(Composite Index) 필요로 인해 주석 처리
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
                     Log.e(TAG, "리스닝 오류: ${error.message}", error)
@@ -48,7 +59,8 @@ class FirebaseCommandListener(
     }
 
     private fun processCommand(documentId: String, command: String) {
-        val docRef = firestore.collection(COLLECTION_COMMANDS).document(documentId)
+        val path = getCommandsPath()
+        val docRef = firestore.collection(path).document(documentId)
 
         docRef.update(
             mapOf(
@@ -76,6 +88,11 @@ class FirebaseCommandListener(
         }.addOnFailureListener { e ->
             Log.e(TAG, "processing 상태 업데이트 실패: ${e.message}")
         }
+    }
+
+    fun restartListening() {
+        stopListening()
+        startListening()
     }
 
     fun stopListening() {

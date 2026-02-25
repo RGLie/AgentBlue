@@ -59,9 +59,8 @@ object LlmClient {
 
         if (!response.isSuccessful) {
             val errorBody = response.errorBody()?.string()
-            val errorMsg = "${provider.displayName} API 오류: ${response.code()} $errorBody"
-            Log.e(TAG, errorMsg)
-            return Result.failure(Exception(errorMsg))
+            Log.e(TAG, "${provider.displayName} API 오류: ${response.code()} $errorBody")
+            return Result.failure(Exception(formatApiError(provider.displayName, response.code(), errorBody)))
         }
 
         val content = response.body()?.choices?.firstOrNull()?.message?.content
@@ -96,14 +95,25 @@ object LlmClient {
 
         if (!response.isSuccessful) {
             val errorBody = response.errorBody()?.string()
-            val errorMsg = "Claude API 오류: ${response.code()} $errorBody"
-            Log.e(TAG, errorMsg)
-            return Result.failure(Exception(errorMsg))
+            Log.e(TAG, "Claude API 오류: ${response.code()} $errorBody")
+            return Result.failure(Exception(formatApiError("Claude", response.code(), errorBody)))
         }
 
         val content = response.body()?.content?.firstOrNull { it.type == "text" }?.text
             ?: return Result.failure(Exception("AI 응답이 비어있습니다."))
 
         return Result.success(content)
+    }
+
+    private fun formatApiError(providerName: String, code: Int, rawBody: String?): String {
+        val friendly = when (code) {
+            401 -> "API 키가 유효하지 않습니다. 설정에서 키를 확인해주세요."
+            402 -> "계정 잔액이 부족합니다. $providerName 대시보드에서 크레딧을 충전해주세요."
+            403 -> "이 API 키로는 접근 권한이 없습니다. 키 권한을 확인해주세요."
+            429 -> "요청 한도를 초과했습니다. 잠시 후 다시 시도하거나 $providerName 플랜을 업그레이드해주세요."
+            500, 502, 503 -> "$providerName 서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+            else -> "$providerName API 오류 ($code)"
+        }
+        return "[$providerName] $friendly"
     }
 }

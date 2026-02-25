@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.example.agentdroid.AgentStateManager
 import com.example.agentdroid.data.ModelPreferences
+import com.example.agentdroid.data.SessionPreferences
 import com.example.agentdroid.model.AgentStatus
 import com.example.agentdroid.model.StepLog
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +22,11 @@ class AgentAccessibilityService : AccessibilityService() {
         private const val MAX_STEPS = 15
         private const val DELAY_BETWEEN_STEPS_MS = 1500L
         private const val INITIAL_DELAY_MS = 500L
+        private const val STUCK_HINT_THRESHOLD = 3
+        private const val STUCK_FORCE_BACK_THRESHOLD = 5
+
+        var instance: AgentAccessibilityService? = null
+            private set
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.Default + Job())
@@ -37,9 +43,11 @@ class AgentAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.d(TAG, "Service Connected!")
+        instance = this
 
         AgentStateManager.init(this)
         ModelPreferences.init(this)
+        SessionPreferences.init(this)
 
         floatingPanelManager = FloatingPanelManager(this)
 
@@ -79,6 +87,7 @@ class AgentAccessibilityService : AccessibilityService() {
         floatingPanelManager?.show(userCommand, MAX_STEPS)
 
         val actionHistory = mutableListOf<String>()
+        var consecutiveFailures = 0
 
         delay(INITIAL_DELAY_MS)
 
@@ -93,11 +102,35 @@ class AgentAccessibilityService : AccessibilityService() {
 
             Log.d(TAG, "--- Step $step/$MAX_STEPS ---")
 
+            // 연속 5회 이상 실패 시 강제 BACK 수행 (LLM 판단 우회)
+            if (consecutiveFailures >= STUCK_FORCE_BACK_THRESHOLD) {
+                Log.w(TAG, "Step $step: 연속 ${consecutiveFailures}회 실패 — 강제 BACK 수행")
+                val forceBackSuccess = performGlobalAction(GLOBAL_ACTION_BACK)
+                actionHistory.add("Step $step [SYSTEM]: Forced BACK due to $consecutiveFailures consecutive failures (result: $forceBackSuccess)")
+
+                val stepLog = StepLog(step, "BACK", null, "시스템 강제 복구: 연속 ${consecutiveFailures}회 실패", forceBackSuccess)
+                AgentStateManager.onStepCompleted(stepLog)
+                floatingPanelManager?.updateStep(step, MAX_STEPS, "시스템 강제 복구 (BACK)")
+
+                consecutiveFailures = 0
+                delay(DELAY_BETWEEN_STEPS_MS)
+                continue
+            }
+
             val rootNode = rootInActiveWindow
             if (rootNode == null) {
                 Log.w(TAG, "Step $step: 활성 윈도우를 찾을 수 없습니다. 재시도 대기...")
                 delay(DELAY_BETWEEN_STEPS_MS)
                 continue
+            }
+
+            // 연속 3회 이상 실패 시 LLM에 힌트 삽입
+            if (consecutiveFailures >= STUCK_HINT_THRESHOLD) {
+                val hint = "[SYSTEM HINT] $consecutiveFailures consecutive failures detected. " +
+                    "You are likely stuck on a wrong screen. Use BACK or HOME to navigate to a relevant screen. " +
+                    "Do NOT click random elements."
+                actionHistory.add(hint)
+                Log.w(TAG, "Step $step: stuck 감지 — LLM에 힌트 삽입 (연속 ${consecutiveFailures}회 실패)")
             }
 
             val uiTree = uiTreeParser.parse(rootNode)
@@ -112,6 +145,7 @@ class AgentAccessibilityService : AccessibilityService() {
                 AgentStateManager.onStepCompleted(stepLog)
                 floatingPanelManager?.updateStep(step, MAX_STEPS, "오류: ${error.message}")
 
+                consecutiveFailures++
                 delay(DELAY_BETWEEN_STEPS_MS)
                 continue
             }
@@ -131,6 +165,12 @@ class AgentAccessibilityService : AccessibilityService() {
 
             val success = actionExecutor.execute(rootNode, action, this)
             actionHistory.add(action.toHistoryEntry(step, success))
+
+            if (success) {
+                consecutiveFailures = 0
+            } else {
+                consecutiveFailures++
+            }
 
             val stepLog = StepLog(
                 step = step,
@@ -156,8 +196,14 @@ class AgentAccessibilityService : AccessibilityService() {
         Log.e(TAG, "Service Interrupted")
     }
 
+    fun restartCommandListener() {
+        Log.d(TAG, "FirebaseCommandListener 재시작 (세션 변경)")
+        firebaseCommandListener?.restartListening()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        instance = null
 
         currentJob?.cancel()
         currentJob = null

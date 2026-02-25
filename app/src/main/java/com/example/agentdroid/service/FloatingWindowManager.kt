@@ -1,6 +1,7 @@
 package com.example.agentdroid.service
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.PixelFormat
 import android.util.Log
 import android.view.Gravity
@@ -9,6 +10,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
+import com.example.agentdroid.MainActivity
 import com.example.agentdroid.R
 
 class FloatingWindowManager(
@@ -63,7 +65,7 @@ class FloatingWindowManager(
 
     private fun showCommandDialog() {
         val editText = EditText(context).apply {
-            hint = "명령을 입력하세요 (ex. 설정 열어줘)"
+            hint = "명령을 입력하세요"
         }
 
         val dialog = android.app.AlertDialog.Builder(
@@ -78,6 +80,13 @@ class FloatingWindowManager(
                 onCommandEntered(command)
             }
             .setNegativeButton("취소", null)
+            .setNeutralButton("설정") { _, _ ->
+                val intent = Intent(context, MainActivity::class.java).apply {
+                    // This flag is required to start an activity from a service context
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
             .create()
 
         dialog.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)

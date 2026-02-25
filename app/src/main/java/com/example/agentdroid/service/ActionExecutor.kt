@@ -16,6 +16,7 @@ class ActionExecutor {
         private const val ACTION_TYPE = "TYPE"
         private const val ACTION_SCROLL = "SCROLL"
         private const val ACTION_BACK = "BACK"
+        private const val ACTION_HOME = "HOME"
         private const val ACTION_DONE = "DONE"
     }
 
@@ -34,6 +35,7 @@ class ActionExecutor {
             ACTION_TYPE -> findAndType(rootNode, action.targetText ?: "", action.inputText ?: "")
             ACTION_SCROLL -> performScroll(rootNode, action.targetText)
             ACTION_BACK -> performBack(service)
+            ACTION_HOME -> performHome(service)
             else -> {
                 Log.w(TAG, "알 수 없는 액션 타입: ${action.actionType}")
                 false
@@ -292,6 +294,10 @@ class ActionExecutor {
 
     private fun performBack(service: AccessibilityService): Boolean {
         return service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+    }
+
+    private fun performHome(service: AccessibilityService): Boolean {
+        return service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
     }
 
     // --- 공통 유틸리티 ---

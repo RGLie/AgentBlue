@@ -70,17 +70,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.agentdroid.data.ExecutionEntity
 import com.example.agentdroid.data.ModelPreferences
+import com.example.agentdroid.data.SessionPreferences
 import com.example.agentdroid.model.AgentStatus
 import com.example.agentdroid.model.AiProvider
 import com.example.agentdroid.model.StepLog
 import com.example.agentdroid.ui.theme.AgentBlue
 import com.example.agentdroid.ui.theme.AgentDroidTheme
 import com.example.agentdroid.ui.theme.StatusCancelled
+import com.example.agentdroid.ui.theme.StatusCancelledBg
 import com.example.agentdroid.ui.theme.StatusCompleted
+import com.example.agentdroid.ui.theme.StatusCompletedBg
 import com.example.agentdroid.ui.theme.StatusFailed
+import com.example.agentdroid.ui.theme.StatusFailedBg
 import com.example.agentdroid.ui.theme.StatusIdle
+import com.example.agentdroid.ui.theme.StatusIdleBg
+import com.example.agentdroid.ui.theme.StatusRunning
+import com.example.agentdroid.ui.theme.StatusRunningBg
 import com.example.agentdroid.ui.theme.StepError
 import com.example.agentdroid.ui.theme.StepSuccess
+import com.example.agentdroid.service.AgentAccessibilityService
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -91,9 +101,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         AgentStateManager.init(this)
+        SessionPreferences.init(this)
 
         val defaultKey = try { BuildConfig.OPENAI_API_KEY } catch (_: Exception) { "" }
         ModelPreferences.init(this, defaultKey)
+
+        val auth = FirebaseAuth.getInstance()
+        if (auth.currentUser == null) {
+            auth.signInAnonymously()
+        }
 
         enableEdgeToEdge()
         setContent {
@@ -150,6 +166,7 @@ fun AgentDroidApp(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item { SessionCard() }
             item { ModelSettingsCard() }
             item { SettingsCard(onOpenAccessibilitySettings, onOpenOverlaySettings) }
 
@@ -545,14 +562,20 @@ fun HistoryCard(record: ExecutionEntity) {
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = statusColor.copy(alpha = 0.15f)
+                    color = when (record.status) {
+                        AgentStatus.COMPLETED.name -> StatusCompletedBg
+                        AgentStatus.RUNNING.name -> StatusRunningBg
+                        AgentStatus.FAILED.name -> StatusFailedBg
+                        AgentStatus.CANCELLED.name -> StatusCancelledBg
+                        else -> StatusIdleBg
+                    }
                 ) {
                     Text(
                         statusLabel,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         color = statusColor,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -611,6 +634,7 @@ fun StepLogRow(stepLog: StepLog) {
         "TYPE" -> "TYPE"
         "SCROLL" -> "SCROLL"
         "BACK" -> "BACK"
+        "HOME" -> "HOME"
         "DONE" -> "DONE"
         "ERROR" -> "ERR"
         else -> stepLog.actionType
@@ -626,9 +650,16 @@ fun StepLogRow(stepLog: StepLog) {
                 .padding(10.dp),
             verticalAlignment = Alignment.Top
         ) {
+            val bgColor = when {
+                stepLog.actionType == "DONE" -> StatusCompletedBg
+                stepLog.actionType == "ERROR" -> StatusFailedBg
+                stepLog.success -> StatusRunningBg
+                else -> StatusFailedBg
+            }
+
             Surface(
                 shape = RoundedCornerShape(6.dp),
-                color = statusColor.copy(alpha = 0.15f)
+                color = bgColor
             ) {
                 Text(
                     label,
@@ -668,6 +699,161 @@ fun StepLogRow(stepLog: StepLog) {
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+            }
+        }
+    }
+}
+
+// --- 세션 페어링 카드 ---
+
+@Composable
+fun SessionCard() {
+    var sessionCode by remember { mutableStateOf("") }
+    var isPaired by remember { mutableStateOf(SessionPreferences.hasPairedSession()) }
+    var pairedCode by remember { mutableStateOf(SessionPreferences.getSessionCode() ?: "") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val firestore = remember { FirebaseFirestore.getInstance() }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "세션 연결",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isPaired) StatusRunning.copy(alpha = 0.15f)
+                    else StatusIdle.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        if (isPaired) "연결됨" else "미연결",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        color = if (isPaired) StatusRunning else StatusIdle,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (isPaired) "세션 코드: $pairedCode"
+                else "Desktop에서 생성한 세션 코드를 입력하세요.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (!isPaired) {
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = sessionCode,
+                    onValueChange = {
+                        sessionCode = it.uppercase().take(8)
+                        errorMessage = null
+                    },
+                    placeholder = { Text("세션 코드 (8자리)") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                errorMessage?.let { msg ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(msg, color = StatusFailed, fontSize = 12.sp)
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        if (sessionCode.length != 8) {
+                            errorMessage = "8자리 세션 코드를 입력해주세요."
+                            return@Button
+                        }
+                        isLoading = true
+                        errorMessage = null
+
+                        firestore.collection("sessions")
+                            .whereEqualTo("code", sessionCode)
+                            .whereEqualTo("status", "waiting")
+                            .get()
+                            .addOnSuccessListener { snapshots ->
+                                if (snapshots.isEmpty) {
+                                    isLoading = false
+                                    errorMessage = "유효한 세션을 찾을 수 없습니다."
+                                    return@addOnSuccessListener
+                                }
+                                val doc = snapshots.documents.first()
+                                val uid = FirebaseAuth.getInstance().currentUser?.uid
+
+                                doc.reference.update(
+                                    mapOf(
+                                        "androidUid" to uid,
+                                        "status" to "paired"
+                                    )
+                                ).addOnSuccessListener {
+                                    SessionPreferences.save(doc.id, sessionCode)
+                                    isPaired = true
+                                    pairedCode = sessionCode
+                                    isLoading = false
+                                    AgentAccessibilityService.instance?.restartCommandListener()
+                                }.addOnFailureListener { e ->
+                                    isLoading = false
+                                    errorMessage = "연결 실패: ${e.message}"
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                isLoading = false
+                                errorMessage = "검색 실패: ${e.message}"
+                            }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading && sessionCode.length == 8,
+                    colors = ButtonDefaults.buttonColors(containerColor = AgentBlue),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isLoading) {
+                        Text("연결 중...", modifier = Modifier.padding(vertical = 4.dp))
+                    } else {
+                        Text("세션 연결", modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                }
+            } else {
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        val oldSessionId = SessionPreferences.getSessionId()
+                        SessionPreferences.clear()
+                        isPaired = false
+                        pairedCode = ""
+                        sessionCode = ""
+
+                        if (oldSessionId != null) {
+                            firestore.collection("sessions").document(oldSessionId)
+                                .update("status", "disconnected")
+                        }
+                        AgentAccessibilityService.instance?.restartCommandListener()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("세션 연결 해제", modifier = Modifier.padding(vertical = 4.dp))
                 }
             }
         }

@@ -26,7 +26,8 @@ class ScreenAnalyzer(
             - "CLICK": Tap on a UI element.
             - "TYPE": Enter text into an input field.
             - "SCROLL": Scroll the screen. Set "target_text" to "DOWN" or "UP".
-            - "BACK": Press the Android back button.
+            - "BACK": Press the Android back button. Use when the current screen is not relevant to the goal.
+            - "HOME": Press the Android home button. Use as a last resort to return to the launcher and start over.
             - "DONE": The user's goal has been fully achieved.
             
             Targeting elements:
@@ -40,6 +41,19 @@ class ScreenAnalyzer(
             - The system will automatically find the clickable parent if the text element itself is not clickable.
             - When target_text matches an EditText you already typed in, prefer using target_id to specify the actual suggestion or button instead.
             
+            Navigation Recovery Rules (CRITICAL):
+            - BEFORE choosing CLICK, verify the target element actually exists in the CURRENT UI tree.
+            - If the current screen has NO elements related to the goal, do NOT click random elements. Use BACK instead.
+            - If you have used BACK 2+ times in recent history and still haven't reached a relevant screen, use HOME to return to the launcher.
+            - After HOME, look for the target app icon on the home screen and tap it to restart.
+            - If the screen's package name differs from the target app, prefer BACK or HOME over clicking.
+            
+            Stuck Prevention Rules (CRITICAL):
+            - NEVER repeat an action that already FAILED with the same target_text and action_type.
+            - If the last 2 actions in history are both FAILED, you MUST change strategy: try SCROLL to reveal hidden elements, BACK to leave the screen, or HOME to start over.
+            - If you see a "[SYSTEM HINT]" in the action history, follow its guidance immediately.
+            - When no viable action exists on the current screen, use BACK or HOME. Do NOT guess or click unrelated elements.
+            
             Rules:
             - Return exactly ONE action per response.
             - Analyze what has already been done (history) to avoid repeating actions.
@@ -49,7 +63,7 @@ class ScreenAnalyzer(
             
             Output Format:
             {
-              "action_type": "CLICK" | "TYPE" | "SCROLL" | "BACK" | "DONE",
+              "action_type": "CLICK" | "TYPE" | "SCROLL" | "BACK" | "HOME" | "DONE",
               "target_text": "visible text or content description",
               "target_id": "resource ID (optional, for disambiguation)",
               "input_text": "text to type (only for TYPE)",

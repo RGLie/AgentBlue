@@ -1,10 +1,13 @@
 package com.example.agentdroid
 
 import android.content.Context
+import android.util.Log
 import com.example.agentdroid.data.AppDatabase
 import com.example.agentdroid.data.ExecutionEntity
+import com.example.agentdroid.data.SessionPreferences
 import com.example.agentdroid.model.AgentStatus
 import com.example.agentdroid.model.StepLog
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -14,14 +17,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 object AgentStateManager {
 
+    private const val TAG = "AgentStateManager"
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val gson = Gson()
+    private val firestore = FirebaseFirestore.getInstance()
 
     private var database: AppDatabase? = null
 
@@ -50,6 +55,7 @@ object AgentStateManager {
 
     fun init(context: Context) {
         database = AppDatabase.getInstance(context)
+        SessionPreferences.init(context)
     }
 
     fun getHistoryFlow(): Flow<List<ExecutionEntity>> {
@@ -66,12 +72,14 @@ object AgentStateManager {
         _liveSteps.value = emptyList()
         _cancelRequested.value = false
         currentRecordStartTime = System.currentTimeMillis()
+        syncToFirestore()
     }
 
     fun onStepCompleted(stepLog: StepLog) {
         _currentStep.value = stepLog.step
         _currentReasoning.value = stepLog.reasoning
         _liveSteps.update { it + stepLog }
+        syncToFirestore()
     }
 
     fun onExecutionFinished(status: AgentStatus, resultMessage: String) {
@@ -90,6 +98,7 @@ object AgentStateManager {
 
         _status.value = status
         _currentReasoning.value = resultMessage
+        syncToFirestore()
     }
 
     fun requestCancel() {
@@ -111,6 +120,7 @@ object AgentStateManager {
         _currentReasoning.value = null
         _liveSteps.value = emptyList()
         _cancelRequested.value = false
+        syncToFirestore()
     }
 
     fun parseStepsFromJson(json: String): List<StepLog> {
@@ -120,5 +130,37 @@ object AgentStateManager {
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    private fun syncToFirestore() {
+        val sessionId = SessionPreferences.getSessionId() ?: return
+
+        val stepsData = _liveSteps.value.map { step ->
+            mapOf(
+                "step" to step.step,
+                "actionType" to step.actionType,
+                "targetText" to step.targetText,
+                "reasoning" to step.reasoning,
+                "success" to step.success,
+                "timestamp" to step.timestamp
+            )
+        }
+
+        val data = mapOf(
+            "status" to _status.value.name,
+            "currentCommand" to _currentCommand.value,
+            "currentStep" to _currentStep.value,
+            "maxSteps" to _maxSteps.value,
+            "currentReasoning" to _currentReasoning.value,
+            "liveSteps" to stepsData,
+            "updatedAt" to com.google.firebase.Timestamp.now()
+        )
+
+        firestore.collection("sessions").document(sessionId)
+            .collection("agentState").document("current")
+            .set(data)
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Firestore 상태 동기화 실패: ${e.message}")
+            }
     }
 }
