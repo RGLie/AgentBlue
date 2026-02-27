@@ -1093,6 +1093,21 @@ fun SessionCard() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            Spacer(Modifier.height(8.dp))
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = StatusCancelled.copy(alpha = 0.1f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "⚠ 세션 코드를 절대 타인에게 공유하지 마세요. 코드를 아는 제3자가 기기를 원격 조작할 수 있습니다.",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = StatusCancelled,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
             if (!isPaired) {
                 Spacer(Modifier.height(16.dp))
 

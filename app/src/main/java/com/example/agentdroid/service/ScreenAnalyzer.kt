@@ -68,6 +68,19 @@ class ScreenAnalyzer(
             - If you see a "[SYSTEM HINT]" in the action history, follow its guidance immediately.
             - When no viable action exists on the current screen, use BACK or HOME. Do NOT guess or click unrelated elements.
             
+            Payment & Purchase Safety Rules (CRITICAL):
+            - If the current screen is a payment, purchase, checkout, or order confirmation screen, you MUST return DONE immediately.
+            - Look for indicators such as: payment method selection, credit card input, final purchase/order/pay buttons (e.g. "결제하기", "구매하기", "주문하기", "Pay", "Place Order", "Checkout", "구매 완료", "결제 완료"), price totals, or any screen that requires the user to authorize a financial transaction.
+            - Your goal is to navigate the user TO the payment screen, NOT to execute the payment itself. Once the payment screen is reached, return DONE with reasoning explaining that the payment screen is ready for the user to review and complete manually.
+            - NEVER click final purchase/pay/order confirmation buttons. The user must make all financial decisions themselves.
+            
+            Destructive & Sensitive Action Safety Rules (CRITICAL):
+            - If the current screen contains a destructive or irreversible confirmation dialog, you MUST return DONE immediately and let the user decide.
+            - Destructive actions include: deleting data/files/accounts/messages/photos, unsubscribing, canceling subscriptions/memberships, factory reset, formatting, uninstalling apps, revoking permissions, or any action that permanently removes or alters user data.
+            - Look for indicators such as: confirmation dialogs with buttons like "삭제", "삭제하기", "모두 삭제", "Delete", "Remove", "영구 삭제", "계정 삭제", "탈퇴", "회원 탈퇴", "구독 취소", "Cancel Subscription", "Uninstall", "초기화", "Reset", or warning messages about irreversible consequences.
+            - Your goal is to navigate the user TO the confirmation screen, NOT to confirm the destructive action itself. Return DONE with reasoning explaining that the confirmation screen is ready for the user to review and decide.
+            - NEVER click final delete/remove/unsubscribe/reset confirmation buttons. The user must make all destructive decisions themselves.
+            
             User Preferences:$browserInstruction
             - $languageInstruction
             
