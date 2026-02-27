@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
@@ -5,7 +7,11 @@ import 'package:window_manager/window_manager.dart';
 import 'services/firebase_service.dart';
 import 'services/hotkey_service.dart';
 import 'services/notification_service.dart';
+import 'theme/app_colors.dart';
+import 'widgets/agent_status_panel.dart';
+import 'widgets/command_history.dart';
 import 'widgets/command_input.dart';
+import 'widgets/session_panel.dart';
 
 bool get isDesktop {
   if (kIsWeb) return false;
@@ -16,19 +22,19 @@ bool get isDesktop {
   ].contains(defaultTargetPlatform);
 }
 
+const _mainWindowSize = Size(480, 720);
+const _compactWindowSize = Size(520, 110);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (isDesktop) {
     await windowManager.ensureInitialized();
     await HotkeyService.instance.initialize();
-
-    // [수정] 알림 기능은 데스크톱에서만 초기화되도록 이곳으로 이동!
     await NotificationService.instance.initialize();
   }
 
   await FirebaseService.instance.initialize();
-  // await NotificationService.instance.initialize(); // [삭제] 여기 있으면 웹에서 에러 남
 
   runApp(const AgentBlueDesktopApp());
 }
@@ -43,25 +49,26 @@ class AgentBlueDesktopApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        colorSchemeSeed: const Color(0xFF4F8CFF),
+        colorSchemeSeed: AppColors.agentBlue,
         useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.background,
       ),
-      home: const CommandOverlayPage(),
+      home: const MainPage(),
     );
   }
 }
 
-class CommandOverlayPage extends StatefulWidget {
-  const CommandOverlayPage({super.key});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
 
   @override
-  State<CommandOverlayPage> createState() => _CommandOverlayPageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _CommandOverlayPageState extends State<CommandOverlayPage>
-    with WindowListener {
-  bool _isVisible = !isDesktop;
-  String? _lastCommandId;
+class _MainPageState extends State<MainPage> with WindowListener {
+  bool _isCompactMode = false;
+  Stream<AgentState>? _agentStateStream;
+  Stream<List<CommandRecord>>? _historyStream;
 
   @override
   void initState() {
@@ -70,48 +77,74 @@ class _CommandOverlayPageState extends State<CommandOverlayPage>
       _initWindow();
       _registerHotkey();
     }
+    _refreshStreams();
   }
 
   Future<void> _initWindow() async {
     await windowManager.setPreventClose(true);
-    await windowManager.setAlwaysOnTop(true);
-    await windowManager.setSkipTaskbar(true);
-    await windowManager.setResizable(false);
     await windowManager.setTitleBarStyle(TitleBarStyle.hidden,
         windowButtonVisibility: false);
-    await windowManager.setSize(const Size(520, 110));
+    await windowManager.setSize(_mainWindowSize);
     await windowManager.center();
-    await windowManager.hide();
+    await windowManager.show();
     windowManager.addListener(this);
   }
 
   Future<void> _registerHotkey() async {
     await HotkeyService.instance.registerShowCommandWindow(() async {
-      setState(() => _isVisible = true);
-      await windowManager.center();
-      await windowManager.show();
-      await windowManager.focus();
+      if (_isCompactMode) {
+        await _switchToMainMode();
+      } else {
+        await _switchToCompactMode();
+      }
     });
   }
 
-  Future<void> _closeOverlay() async {
-    if (!mounted) return;
-    setState(() => _isVisible = false);
+  Future<void> _switchToCompactMode() async {
+    setState(() => _isCompactMode = true);
     if (isDesktop) {
-      await windowManager.hide();
+      await windowManager.setSize(_compactWindowSize);
+      await windowManager.setAlwaysOnTop(true);
+      await windowManager.setSkipTaskbar(true);
+      await windowManager.setResizable(false);
+      await windowManager.center();
+      await windowManager.show();
+      await windowManager.focus();
+    }
+  }
+
+  Future<void> _switchToMainMode() async {
+    setState(() => _isCompactMode = false);
+    if (isDesktop) {
+      await windowManager.setSize(_mainWindowSize);
+      await windowManager.setAlwaysOnTop(false);
+      await windowManager.setSkipTaskbar(false);
+      await windowManager.setResizable(true);
+      await windowManager.center();
+      await windowManager.show();
+      await windowManager.focus();
+    }
+  }
+
+  void _refreshStreams() {
+    final firebase = FirebaseService.instance;
+    if (firebase.hasSession) {
+      setState(() {
+        _agentStateStream = firebase.agentStateStream();
+        _historyStream = firebase.commandHistoryStream();
+      });
     }
   }
 
   Future<void> _submitCommand(String command) async {
-    final commandId =
-        await FirebaseService.instance.sendCommand(command: command);
-    setState(() => _lastCommandId = commandId);
-    await _closeOverlay();
-    _listenCommandResult(commandId);
-  }
+    final firebase = FirebaseService.instance;
+    final commandId = await firebase.sendCommand(command: command);
 
-  void _listenCommandResult(String commandId) {
-    FirebaseService.instance.listenCommandResult(
+    if (_isCompactMode) {
+      await _switchToMainMode();
+    }
+
+    firebase.listenCommandResult(
       commandId,
       onCompleted: (result) {
         NotificationService.instance.show(
@@ -129,24 +162,153 @@ class _CommandOverlayPageState extends State<CommandOverlayPage>
   }
 
   @override
+  void onWindowClose() async {
+    if (_isCompactMode) {
+      await _switchToMainMode();
+    } else {
+      await windowManager.destroy();
+    }
+  }
+
+  @override
   void dispose() {
     if (isDesktop) {
       windowManager.removeListener(this);
       HotkeyService.instance.dispose();
     }
+    FirebaseService.instance.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isCompactMode) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: CommandInput(
+            visible: true,
+            compact: true,
+            onSubmit: _submitCommand,
+            onClose: _switchToMainMode,
+            agentStateStream: _agentStateStream,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: CommandInput(
-          visible: _isVisible,
-          lastCommandId: _lastCommandId,
-          onSubmit: _submitCommand,
-          onClose: _closeOverlay,
+      backgroundColor: AppColors.background,
+      body: _MainWindowBody(
+        agentStateStream: _agentStateStream,
+        historyStream: _historyStream,
+        onSubmit: _submitCommand,
+        onSessionCreated: _refreshStreams,
+        onDisconnected: () {
+          setState(() {
+            _agentStateStream = null;
+            _historyStream = null;
+          });
+        },
+        onCompactMode: _switchToCompactMode,
+      ),
+    );
+  }
+}
+
+class _MainWindowBody extends StatelessWidget {
+  final Stream<AgentState>? agentStateStream;
+  final Stream<List<CommandRecord>>? historyStream;
+  final Future<void> Function(String) onSubmit;
+  final VoidCallback onSessionCreated;
+  final VoidCallback onDisconnected;
+  final VoidCallback onCompactMode;
+
+  const _MainWindowBody({
+    required this.agentStateStream,
+    required this.historyStream,
+    required this.onSubmit,
+    required this.onSessionCreated,
+    required this.onDisconnected,
+    required this.onCompactMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildTitleBar(context),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SessionPanel(
+                  onSessionCreated: onSessionCreated,
+                  onDisconnected: onDisconnected,
+                ),
+                const SizedBox(height: 16),
+                CommandInput(
+                  visible: true,
+                  onSubmit: onSubmit,
+                  onClose: () async {},
+                  agentStateStream: agentStateStream,
+                ),
+                if (agentStateStream != null) ...[
+                  const SizedBox(height: 16),
+                  AgentStatusPanel(stateStream: agentStateStream!),
+                ],
+                if (historyStream != null) ...[
+                  const SizedBox(height: 16),
+                  CommandHistory(historyStream: historyStream!),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTitleBar(BuildContext context) {
+    return GestureDetector(
+      onPanStart: (_) => windowManager.startDragging(),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: const BoxDecoration(
+          color: AppColors.surfaceCardDark,
+          border: Border(
+            bottom: BorderSide(color: AppColors.border, width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 70),
+            const Expanded(
+              child: Text(
+                'AgentBlue Commander',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+            Tooltip(
+              message: '빠른 입력 모드 (Cmd+Shift+Space)',
+              child: IconButton(
+                icon: const Icon(
+                  Icons.terminal_rounded,
+                  size: 18,
+                  color: AppColors.textMuted,
+                ),
+                onPressed: onCompactMode,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /sessions/{sessionId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+        && (resource.data.desktopUid == request.auth.uid
+            || resource.data.androidUid == request.auth.uid
+            || resource.data.androidUid == null);
+
+      match /commands/{commandId} {
+        allow read, write: if request.auth != null
+          && (get(/databases/$(database)/documents/sessions/$(sessionId)).data.desktopUid == request.auth.uid
+              || get(/databases/$(database)/documents/sessions/$(sessionId)).data.androidUid == request.auth.uid);
+      }
+
+      match /agentState/{doc} {
+        allow read, write: if request.auth != null
+          && (get(/databases/$(database)/documents/sessions/$(sessionId)).data.desktopUid == request.auth.uid
+              || get(/databases/$(database)/documents/sessions/$(sessionId)).data.androidUid == request.auth.uid);
+      }
+    }
+
+    match /commands/{commandId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
