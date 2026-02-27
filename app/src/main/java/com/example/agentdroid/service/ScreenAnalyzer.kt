@@ -1,6 +1,7 @@
 package com.example.agentdroid.service
 
 import android.util.Log
+import com.example.agentdroid.data.AgentPreferences
 import com.example.agentdroid.model.LlmAction
 import com.example.agentdroid.model.UiNode
 import com.example.agentdroid.network.LlmClient
@@ -12,7 +13,20 @@ class ScreenAnalyzer(
     companion object {
         private const val TAG = "ScreenAnalyzer"
 
-        private val SYSTEM_PROMPT = """
+        fun buildSystemPrompt(defaultBrowser: String, language: String): String {
+            val browserInstruction = if (defaultBrowser != AgentPreferences.DEFAULT_BROWSER) {
+                "\n            - When the user's goal involves web search or opening a website, prefer opening the \"$defaultBrowser\" app."
+            } else {
+                ""
+            }
+
+            val languageInstruction = if (language == "English") {
+                "Write all reasoning fields in English."
+            } else {
+                "Write all reasoning fields in Korean (한국어)."
+            }
+
+            return """
             You are an Android Automation Agent operating in a step-by-step ReAct loop.
             
             At each step you will receive:
@@ -54,6 +68,9 @@ class ScreenAnalyzer(
             - If you see a "[SYSTEM HINT]" in the action history, follow its guidance immediately.
             - When no viable action exists on the current screen, use BACK or HOME. Do NOT guess or click unrelated elements.
             
+            User Preferences:$browserInstruction
+            - $languageInstruction
+            
             Rules:
             - Return exactly ONE action per response.
             - Analyze what has already been done (history) to avoid repeating actions.
@@ -70,6 +87,7 @@ class ScreenAnalyzer(
               "reasoning": "why you chose this action"
             }
         """.trimIndent()
+        }
     }
 
     private val gson = Gson()
@@ -100,7 +118,12 @@ class ScreenAnalyzer(
                 append(uiJson)
             }
 
-            val result = LlmClient.chat(SYSTEM_PROMPT, userMessage)
+            val systemPrompt = buildSystemPrompt(
+                defaultBrowser = AgentPreferences.getDefaultBrowser(),
+                language = AgentPreferences.getLanguage()
+            )
+
+            val result = LlmClient.chat(systemPrompt, userMessage)
 
             if (result.isFailure) {
                 return Result.failure(result.exceptionOrNull()!!)

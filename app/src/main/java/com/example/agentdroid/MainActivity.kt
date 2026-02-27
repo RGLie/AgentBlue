@@ -1,8 +1,13 @@
 package com.example.agentdroid
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,8 +31,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,6 +54,8 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,11 +65,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -68,9 +79,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.agentdroid.data.AgentPreferences
+import com.example.agentdroid.data.ConsentPreferences
 import com.example.agentdroid.data.ExecutionEntity
 import com.example.agentdroid.data.ModelPreferences
 import com.example.agentdroid.data.SessionPreferences
+import com.example.agentdroid.legal.ConsentScreen
+import com.example.agentdroid.legal.LegalDocumentScreen
+import com.example.agentdroid.legal.LegalTexts
 import com.example.agentdroid.model.AgentStatus
 import com.example.agentdroid.model.AiProvider
 import com.example.agentdroid.model.StepLog
@@ -101,7 +117,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         AgentStateManager.init(this)
+        AgentPreferences.init(this)
         SessionPreferences.init(this)
+        ConsentPreferences.init(this)
 
         val defaultKey = try { BuildConfig.OPENAI_API_KEY } catch (_: Exception) { "" }
         ModelPreferences.init(this, defaultKey)
@@ -114,7 +132,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AgentDroidTheme {
-                AgentDroidApp(
+                AppNavigator(
                     onOpenAccessibilitySettings = {
                         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     },
@@ -127,14 +145,95 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+enum class AppScreen {
+    CONSENT,
+    MAIN,
+    PRIVACY_POLICY,
+    TERMS_OF_SERVICE,
+    ACCESSIBILITY_DISCLOSURE
+}
+
+@Composable
+fun AppNavigator(
+    onOpenAccessibilitySettings: () -> Unit,
+    onOpenOverlaySettings: () -> Unit
+) {
+    var currentScreen by remember {
+        mutableStateOf(
+            if (ConsentPreferences.hasFullConsent()) AppScreen.MAIN else AppScreen.CONSENT
+        )
+    }
+    var previousScreen by remember { mutableStateOf(AppScreen.CONSENT) }
+
+    when (currentScreen) {
+        AppScreen.CONSENT -> {
+            ConsentScreen(
+                onConsentGiven = {
+                    ConsentPreferences.saveConsent()
+                    currentScreen = AppScreen.MAIN
+                },
+                onViewPrivacyPolicy = {
+                    previousScreen = AppScreen.CONSENT
+                    currentScreen = AppScreen.PRIVACY_POLICY
+                },
+                onViewTermsOfService = {
+                    previousScreen = AppScreen.CONSENT
+                    currentScreen = AppScreen.TERMS_OF_SERVICE
+                },
+                onViewAccessibilityDisclosure = {
+                    previousScreen = AppScreen.CONSENT
+                    currentScreen = AppScreen.ACCESSIBILITY_DISCLOSURE
+                }
+            )
+        }
+
+        AppScreen.MAIN -> {
+            AgentDroidApp(
+                onOpenAccessibilitySettings = onOpenAccessibilitySettings,
+                onOpenOverlaySettings = onOpenOverlaySettings,
+                onNavigateToLegal = { screen ->
+                    previousScreen = AppScreen.MAIN
+                    currentScreen = screen
+                }
+            )
+        }
+
+        AppScreen.PRIVACY_POLICY -> {
+            LegalDocumentScreen(
+                title = "개인정보 처리방침",
+                content = LegalTexts.PRIVACY_POLICY,
+                onBack = { currentScreen = previousScreen }
+            )
+        }
+
+        AppScreen.TERMS_OF_SERVICE -> {
+            LegalDocumentScreen(
+                title = "이용약관",
+                content = LegalTexts.TERMS_OF_SERVICE,
+                onBack = { currentScreen = previousScreen }
+            )
+        }
+
+        AppScreen.ACCESSIBILITY_DISCLOSURE -> {
+            LegalDocumentScreen(
+                title = "접근성 API 사용 고지",
+                content = LegalTexts.ACCESSIBILITY_DISCLOSURE,
+                onBack = { currentScreen = previousScreen }
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgentDroidApp(
     onOpenAccessibilitySettings: () -> Unit,
-    onOpenOverlaySettings: () -> Unit
+    onOpenOverlaySettings: () -> Unit,
+    onNavigateToLegal: (AppScreen) -> Unit = {}
 ) {
     val history by AgentStateManager.getHistoryFlow().collectAsState(initial = emptyList())
     var showClearDialog by remember { mutableStateOf(false) }
+    var showInfoDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -143,6 +242,13 @@ fun AgentDroidApp(
                     Text("AgentDroid", fontWeight = FontWeight.Bold)
                 },
                 actions = {
+                    IconButton(onClick = { showInfoDialog = true }) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = "앱 정보",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     if (history.isNotEmpty()) {
                         IconButton(onClick = { showClearDialog = true }) {
                             Icon(
@@ -168,6 +274,7 @@ fun AgentDroidApp(
         ) {
             item { SessionCard() }
             item { ModelSettingsCard() }
+            item { AgentSettingsCard() }
             item { SettingsCard(onOpenAccessibilitySettings, onOpenOverlaySettings) }
 
             if (history.isNotEmpty()) {
@@ -197,6 +304,13 @@ fun AgentDroidApp(
                 item { EmptyState() }
             }
         }
+    }
+
+    if (showInfoDialog) {
+        InfoDialog(
+            onDismiss = { showInfoDialog = false },
+            onNavigateToLegal = onNavigateToLegal
+        )
     }
 
     if (showClearDialog) {
@@ -415,6 +529,229 @@ fun ModelSettingsCard() {
                     Button(
                         onClick = {
                             ModelPreferences.save(selectedProvider, selectedModelId, apiKeyText)
+                            savedMessage = "설정이 저장되었습니다"
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = AgentBlue),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("저장", modifier = Modifier.padding(vertical = 4.dp))
+                    }
+
+                    savedMessage?.let { msg ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            msg,
+                            color = StatusCompleted,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        LaunchedEffect(msg) {
+                            delay(2500)
+                            savedMessage = null
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// --- 에이전트 동작 설정 카드 ---
+
+@Composable
+fun AgentSettingsCard() {
+    var expanded by remember { mutableStateOf(false) }
+
+    var maxSteps by remember { mutableFloatStateOf(AgentPreferences.getMaxSteps().toFloat()) }
+    var stepDelay by remember { mutableFloatStateOf(AgentPreferences.getStepDelayMs().toFloat()) }
+    var selectedBrowser by remember { mutableStateOf(AgentPreferences.getDefaultBrowser()) }
+    var selectedLanguage by remember { mutableStateOf(AgentPreferences.getLanguage()) }
+    var savedMessage by remember { mutableStateOf<String?>(null) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "에이전트 설정",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "최대 ${maxSteps.toInt()}스텝 · 딜레이 ${"%.1f".format(stepDelay / 1000f)}초 · $selectedBrowser",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    if (expanded) "접기" else "변경",
+                    color = AgentBlue,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column {
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        "최대 스텝 수",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "에이전트가 최대 몇 번까지 시도할지 설정합니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Slider(
+                            value = maxSteps,
+                            onValueChange = { maxSteps = it },
+                            valueRange = 5f..30f,
+                            steps = 24,
+                            modifier = Modifier.weight(1f),
+                            colors = SliderDefaults.colors(
+                                thumbColor = AgentBlue,
+                                activeTrackColor = AgentBlue
+                            )
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "${maxSteps.toInt()}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AgentBlue
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        "스텝 딜레이",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "각 스텝 사이의 대기 시간입니다. 느린 기기에서는 길게 설정하세요.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Slider(
+                            value = stepDelay,
+                            onValueChange = { stepDelay = it },
+                            valueRange = 500f..3000f,
+                            modifier = Modifier.weight(1f),
+                            colors = SliderDefaults.colors(
+                                thumbColor = AgentBlue,
+                                activeTrackColor = AgentBlue
+                            )
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "${"%.1f".format(stepDelay / 1000f)}초",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AgentBlue
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        "기본 브라우저",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "검색 시 사용할 브라우저 앱을 지정합니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AgentPreferences.BROWSER_OPTIONS.forEach { browser ->
+                            FilterChip(
+                                selected = selectedBrowser == browser,
+                                onClick = { selectedBrowser = browser },
+                                label = { Text(browser, fontSize = 13.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = AgentBlue.copy(alpha = 0.15f),
+                                    selectedLabelColor = AgentBlue
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        "응답 언어",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "AI 에이전트의 추론 언어를 설정합니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AgentPreferences.LANGUAGE_OPTIONS.forEach { lang ->
+                            FilterChip(
+                                selected = selectedLanguage == lang,
+                                onClick = { selectedLanguage = lang },
+                                label = { Text(lang, fontSize = 13.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = AgentBlue.copy(alpha = 0.15f),
+                                    selectedLabelColor = AgentBlue
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            AgentPreferences.setMaxSteps(maxSteps.toInt())
+                            AgentPreferences.setStepDelayMs(stepDelay.toLong())
+                            AgentPreferences.setDefaultBrowser(selectedBrowser)
+                            AgentPreferences.setLanguage(selectedLanguage)
                             savedMessage = "설정이 저장되었습니다"
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -858,6 +1195,272 @@ fun SessionCard() {
             }
         }
     }
+}
+
+// --- 정보 다이얼로그 ---
+
+@Composable
+fun InfoDialog(
+    onDismiss: () -> Unit,
+    onNavigateToLegal: (AppScreen) -> Unit = {}
+) {
+    val versionName = try { BuildConfig.VERSION_NAME } catch (_: Exception) { "1.1.0" }
+    val context = LocalContext.current
+    val webDashboardUrl = "https://agentblue-d83e5.web.app"
+    var linkCopiedMessage by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text("AgentDroid", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "v$versionName",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AgentBlue,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    "AgentDroid는 AI가 안드로이드 화면을 분석하고 자동으로 조작하는 에이전트 앱입니다. PC 또는 다른 기기의 웹 브라우저에서 명령을 입력하면, 연결된 안드로이드 기기가 자동으로 실행합니다.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    "초기 설정",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+
+                val setupSteps = listOf(
+                    "1. 접근성 서비스를 활성화합니다.",
+                    "2. 화면 위에 표시 권한을 허용합니다.",
+                    "3. AI 모델과 API 키를 설정합니다."
+                )
+                setupSteps.forEach { step ->
+                    Text(
+                        step,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    "Desktop 웹에서 원격 명령 실행",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "PC나 다른 기기의 브라우저에서 아래 웹 페이지에 접속하여 명령을 보낼 수 있습니다.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = AgentBlue.copy(alpha = 0.08f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            webDashboardUrl,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AgentBlue,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("AgentDroid Web", webDashboardUrl))
+                                    linkCopiedMessage = "링크가 복사되었습니다"
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("링크 복사", fontSize = 12.sp)
+                            }
+                        }
+                        linkCopiedMessage?.let { msg ->
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                msg,
+                                color = StatusCompleted,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            LaunchedEffect(msg) {
+                                delay(2000)
+                                linkCopiedMessage = null
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                val remoteSteps = listOf(
+                    "1. 웹 페이지에서 '세션 생성'을 눌러 8자리 세션 코드를 발급받습니다.",
+                    "2. 이 앱의 '세션 연결' 카드에서 해당 코드를 입력합니다.",
+                    "3. 연결 완료 후, 웹에서 명령을 입력하면 이 기기에서 자동 실행됩니다.",
+                    "4. 실행 상태와 결과를 웹에서 실시간으로 확인할 수 있습니다."
+                )
+                remoteSteps.forEach { step ->
+                    Text(
+                        step,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    "기기에서 직접 명령 실행",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "세션 연결 없이도 화면에 표시되는 플로팅 버튼을 눌러 직접 명령을 입력할 수 있습니다.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    "법적 고지",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+
+                TextButton(onClick = {
+                    onDismiss()
+                    onNavigateToLegal(AppScreen.PRIVACY_POLICY)
+                }) {
+                    Text(
+                        "개인정보 처리방침",
+                        color = AgentBlue,
+                        fontSize = 14.sp
+                    )
+                }
+
+                TextButton(onClick = {
+                    onDismiss()
+                    onNavigateToLegal(AppScreen.TERMS_OF_SERVICE)
+                }) {
+                    Text(
+                        "이용약관",
+                        color = AgentBlue,
+                        fontSize = 14.sp
+                    )
+                }
+
+                TextButton(onClick = {
+                    onDismiss()
+                    onNavigateToLegal(AppScreen.ACCESSIBILITY_DISCLOSURE)
+                }) {
+                    Text(
+                        "접근성 API 사용 고지",
+                        color = AgentBlue,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    "변경 로그",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = AgentBlue.copy(alpha = 0.08f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "v1.1.0",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = AgentBlue
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        val changes110 = listOf(
+                            "에이전트 동작 설정 추가 (최대 스텝, 딜레이, 브라우저, 언어)",
+                            "HOME 액션 지원",
+                            "Stuck 감지 및 자동 복구 시스템",
+                            "앱 정보 다이얼로그"
+                        )
+                        changes110.forEach { change ->
+                            Text(
+                                "· $change",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 1.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "v1.0.0",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "· 최초 릴리즈",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("닫기", color = AgentBlue, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    )
 }
 
 // --- 빈 상태 ---

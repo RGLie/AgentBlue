@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.example.agentdroid.AgentStateManager
+import com.example.agentdroid.data.AgentPreferences
 import com.example.agentdroid.data.ModelPreferences
 import com.example.agentdroid.data.SessionPreferences
 import com.example.agentdroid.model.AgentStatus
@@ -19,8 +20,6 @@ class AgentAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "AgentDroid_Service"
-        private const val MAX_STEPS = 15
-        private const val DELAY_BETWEEN_STEPS_MS = 1500L
         private const val INITIAL_DELAY_MS = 500L
         private const val STUCK_HINT_THRESHOLD = 3
         private const val STUCK_FORCE_BACK_THRESHOLD = 5
@@ -46,6 +45,7 @@ class AgentAccessibilityService : AccessibilityService() {
         instance = this
 
         AgentStateManager.init(this)
+        AgentPreferences.init(this)
         ModelPreferences.init(this)
         SessionPreferences.init(this)
 
@@ -81,17 +81,20 @@ class AgentAccessibilityService : AccessibilityService() {
     }
 
     private suspend fun runReActLoop(userCommand: String): Pair<Boolean, String> {
-        Log.d(TAG, "=== ReAct 루프 시작: '$userCommand' (최대 ${MAX_STEPS}스텝) ===")
+        val maxSteps = AgentPreferences.getMaxSteps()
+        val delayBetweenStepsMs = AgentPreferences.getStepDelayMs()
 
-        AgentStateManager.onExecutionStarted(userCommand, MAX_STEPS)
-        floatingPanelManager?.show(userCommand, MAX_STEPS)
+        Log.d(TAG, "=== ReAct 루프 시작: '$userCommand' (최대 ${maxSteps}스텝, 딜레이 ${delayBetweenStepsMs}ms) ===")
+
+        AgentStateManager.onExecutionStarted(userCommand, maxSteps)
+        floatingPanelManager?.show(userCommand, maxSteps)
 
         val actionHistory = mutableListOf<String>()
         var consecutiveFailures = 0
 
         delay(INITIAL_DELAY_MS)
 
-        for (step in 1..MAX_STEPS) {
+        for (step in 1..maxSteps) {
             if (AgentStateManager.isCancelRequested()) {
                 Log.d(TAG, "=== 사용자에 의해 취소됨 (Step $step) ===")
                 val msg = "사용자가 실행을 중단했습니다. (${step - 1}스텝 완료)"
@@ -100,7 +103,7 @@ class AgentAccessibilityService : AccessibilityService() {
                 return Pair(false, msg)
             }
 
-            Log.d(TAG, "--- Step $step/$MAX_STEPS ---")
+            Log.d(TAG, "--- Step $step/$maxSteps ---")
 
             // 연속 5회 이상 실패 시 강제 BACK 수행 (LLM 판단 우회)
             if (consecutiveFailures >= STUCK_FORCE_BACK_THRESHOLD) {
@@ -110,17 +113,17 @@ class AgentAccessibilityService : AccessibilityService() {
 
                 val stepLog = StepLog(step, "BACK", null, "시스템 강제 복구: 연속 ${consecutiveFailures}회 실패", forceBackSuccess)
                 AgentStateManager.onStepCompleted(stepLog)
-                floatingPanelManager?.updateStep(step, MAX_STEPS, "시스템 강제 복구 (BACK)")
+                floatingPanelManager?.updateStep(step, maxSteps, "시스템 강제 복구 (BACK)")
 
                 consecutiveFailures = 0
-                delay(DELAY_BETWEEN_STEPS_MS)
+                delay(delayBetweenStepsMs)
                 continue
             }
 
             val rootNode = rootInActiveWindow
             if (rootNode == null) {
                 Log.w(TAG, "Step $step: 활성 윈도우를 찾을 수 없습니다. 재시도 대기...")
-                delay(DELAY_BETWEEN_STEPS_MS)
+                delay(delayBetweenStepsMs)
                 continue
             }
 
@@ -143,10 +146,10 @@ class AgentAccessibilityService : AccessibilityService() {
 
                 val stepLog = StepLog(step, "ERROR", null, error.message, false)
                 AgentStateManager.onStepCompleted(stepLog)
-                floatingPanelManager?.updateStep(step, MAX_STEPS, "오류: ${error.message}")
+                floatingPanelManager?.updateStep(step, maxSteps, "오류: ${error.message}")
 
                 consecutiveFailures++
-                delay(DELAY_BETWEEN_STEPS_MS)
+                delay(delayBetweenStepsMs)
                 continue
             }
             val action = analysisResult.getOrThrow()
@@ -180,13 +183,13 @@ class AgentAccessibilityService : AccessibilityService() {
                 success = success
             )
             AgentStateManager.onStepCompleted(stepLog)
-            floatingPanelManager?.updateStep(step, MAX_STEPS, action.reasoning)
+            floatingPanelManager?.updateStep(step, maxSteps, action.reasoning)
 
-            delay(DELAY_BETWEEN_STEPS_MS)
+            delay(delayBetweenStepsMs)
         }
 
-        Log.w(TAG, "=== 최대 스텝 도달 ($MAX_STEPS). 루프 종료 ===")
-        val msg = "최대 스텝($MAX_STEPS)에 도달했지만 목표를 완료하지 못했습니다."
+        Log.w(TAG, "=== 최대 스텝 도달 ($maxSteps). 루프 종료 ===")
+        val msg = "최대 스텝($maxSteps)에 도달했지만 목표를 완료하지 못했습니다."
         AgentStateManager.onExecutionFinished(AgentStatus.FAILED, msg)
         floatingPanelManager?.showResult(false, msg)
         return Pair(false, msg)
