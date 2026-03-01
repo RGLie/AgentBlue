@@ -14,6 +14,9 @@ enum class AiProvider(
         displayName = "OpenAI",
         chatEndpointUrl = "https://api.openai.com/v1/chat/completions",
         models = listOf(
+            AiModel("gpt-5-mini", "GPT-5 Mini"),
+            AiModel("gpt-5-nano", "GPT-5 Nano"),
+            AiModel("gpt-4.1-mini", "GPT-4.1 Mini"),
             AiModel("gpt-4o-mini", "GPT-4o Mini"),
             AiModel("gpt-4o", "GPT-4o"),
             AiModel("o3-mini", "o3-mini"),
@@ -23,6 +26,7 @@ enum class AiProvider(
         displayName = "Google Gemini",
         chatEndpointUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         models = listOf(
+            AiModel("gemini-2.5-flash-preview-04-17", "Gemini 2.5 Flash"),
             AiModel("gemini-2.0-flash", "Gemini 2.0 Flash"),
             AiModel("gemini-2.0-flash-lite", "Gemini 2.0 Flash Lite"),
             AiModel("gemini-1.5-flash", "Gemini 1.5 Flash"),
