@@ -66,7 +66,7 @@ class FloatingPanelManager(private val context: Context) {
         setupListeners()
 
         tvCommand?.text = command
-        tvStatus?.text = "실행 중"
+        tvStatus?.text = "Running"
         tvStep?.text = "0/$maxSteps"
         progressBar?.max = maxSteps * 100
         progressBar?.progress = 0
@@ -88,7 +88,7 @@ class FloatingPanelManager(private val context: Context) {
         try {
             windowManager?.addView(panelView, layoutParams)
         } catch (e: Exception) {
-            Log.e(TAG, "패널 표시 실패: ${e.message}")
+            Log.e(TAG, "Failed to show panel: ${e.message}")
         }
     }
 
@@ -111,10 +111,10 @@ class FloatingPanelManager(private val context: Context) {
 
         if (success) {
             statusDot?.setBackgroundResource(R.drawable.shape_status_dot)
-            tvStatus?.text = "완료"
+            tvStatus?.text = "Done"
             tvStatus?.setTextColor(0xFF4CAF50.toInt())
         } else {
-            tvStatus?.text = "실패"
+            tvStatus?.text = "Failed"
             tvStatus?.setTextColor(0xFFE53935.toInt())
         }
 
@@ -152,7 +152,7 @@ class FloatingPanelManager(private val context: Context) {
     private fun setupListeners() {
         btnStop?.setOnClickListener {
             AgentStateManager.requestCancel()
-            tvStatus?.text = "취소 중..."
+            tvStatus?.text = "Cancelling..."
             btnStop?.visibility = View.GONE
         }
 

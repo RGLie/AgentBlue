@@ -11,25 +11,25 @@ import { printHeader } from '../ui/status.js';
 import { startRepl } from '../ui/repl.js';
 import { startTelegramIntegration } from '../integrations/telegram.js';
 import { startDiscordIntegration } from '../integrations/discord.js';
+import { t } from '../i18n.js';
 
 interface StartOptions {
   session?: string;
 }
 
 export async function startCommand(options: StartOptions): Promise<void> {
-  const spinner = ora('Firebase에 연결 중...').start();
+  const spinner = ora(t('firebase_connecting')).start();
 
-  let db, user;
   try {
-    ({ db, user } = await initFirebase());
-    spinner.succeed('Firebase 연결 완료');
+    await initFirebase();
+    spinner.succeed(t('firebase_connected'));
   } catch (err) {
-    spinner.fail(`Firebase 연결 실패: ${err}`);
-    console.log(chalk.dim("'agentblue init'을 먼저 실행해 설정을 확인하세요."));
+    spinner.fail(`${t('firebase_failed')}: ${err}`);
+    console.log(chalk.dim(t('firebase_hint')));
     process.exit(1);
   }
 
-  const sessionSpinner = ora('세션 생성 중...').start();
+  const sessionSpinner = ora(t('session_creating')).start();
   let sessionId: string;
   let code: string;
 
@@ -37,29 +37,29 @@ export async function startCommand(options: StartOptions): Promise<void> {
     const session = await createSession();
     sessionId = session.sessionId;
     code = session.code;
-    sessionSpinner.succeed(`세션 생성됨: ${chalk.yellow.bold(code)}`);
+    sessionSpinner.succeed(`${t('session_created')}: ${chalk.yellow.bold(code)}`);
   } catch (err) {
-    sessionSpinner.fail(`세션 생성 실패: ${err}`);
+    sessionSpinner.fail(`${t('session_failed')}: ${err}`);
     process.exit(1);
   }
 
   updateConfig({ sessionId, sessionCode: code });
 
   printHeader(code, false);
-  console.log(chalk.dim('Android 앱을 열고 메인 화면의 세션 코드 입력창에 위 코드를 입력하세요.\n'));
+  console.log(chalk.dim(t('session_prompt_android') + '\n'));
 
-  const waitSpinner = ora('기기 연결 대기 중...').start();
+  const waitSpinner = ora(t('session_waiting')).start();
 
   await new Promise<void>((resolve) => {
     const unsub = listenSessionStatus(
       sessionId,
       (_androidUid) => {
-        waitSpinner.succeed(chalk.green('기기가 연결되었습니다!'));
+        waitSpinner.succeed(chalk.green(t('session_connected')));
         unsub();
         resolve();
       },
       () => {
-        waitSpinner.fail('세션이 해제되었습니다.');
+        waitSpinner.fail(t('session_disconnected'));
         process.exit(0);
       },
     );
@@ -69,28 +69,26 @@ export async function startCommand(options: StartOptions): Promise<void> {
 
   const config = getConfig();
 
-  // 설정된 통합 시작
   if (config.telegram?.botToken) {
     try {
       await startTelegramIntegration(sessionId, config.telegram);
-      console.log(chalk.dim('✓ Telegram 봇 연결됨'));
+      console.log(chalk.dim(t('integration_tg_started')));
     } catch {
-      console.log(chalk.yellow('⚠ Telegram 봇 시작 실패 (설정을 확인하세요)'));
+      console.log(chalk.yellow(t('integration_tg_failed')));
     }
   }
 
   if (config.discord?.botToken) {
     try {
       await startDiscordIntegration(sessionId, config.discord);
-      console.log(chalk.dim('✓ Discord 봇 연결됨'));
+      console.log(chalk.dim(t('integration_dc_started')));
     } catch {
-      console.log(chalk.yellow('⚠ Discord 봇 시작 실패 (설정을 확인하세요)'));
+      console.log(chalk.yellow(t('integration_dc_failed')));
     }
   }
 
-  // 종료 시 세션 해제
   process.on('SIGINT', async () => {
-    console.log(chalk.dim('\n\n세션을 종료합니다...'));
+    console.log(chalk.dim(`\n\n${t('repl_exit')}`));
     await disconnectSession(sessionId);
     process.exit(0);
   });
@@ -100,6 +98,5 @@ export async function startCommand(options: StartOptions): Promise<void> {
     process.exit(0);
   });
 
-  // 대화형 REPL 시작
   await startRepl(sessionId);
 }

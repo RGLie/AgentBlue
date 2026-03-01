@@ -1,6 +1,7 @@
 import chalk from 'chalk';
-import { input, number, confirm } from '@inquirer/prompts';
-import { updateConfig, getConfig } from '../config.js';
+import { input, confirm } from '@inquirer/prompts';
+import { updateConfig } from '../config.js';
+import { t } from '../i18n.js';
 
 export async function attachCommand(integration: string): Promise<void> {
   switch (integration.toLowerCase()) {
@@ -11,79 +12,75 @@ export async function attachCommand(integration: string): Promise<void> {
       await attachDiscord();
       break;
     default:
-      console.error(chalk.red(`알 수 없는 통합: ${integration}`));
-      console.log(chalk.dim('사용 가능한 통합: telegram, discord'));
+      console.error(chalk.red(`${t('attach_unknown')} ${integration}`));
+      console.log(chalk.dim(t('attach_available')));
       process.exit(1);
   }
 }
 
 async function attachTelegram(): Promise<void> {
-  console.log(chalk.blue.bold('\nTelegram 봇 설정\n'));
-  console.log(chalk.dim('1. Telegram에서 @BotFather를 찾아 /newbot 명령으로 봇을 생성하세요.'));
-  console.log(chalk.dim('2. BotFather가 제공한 토큰을 아래에 입력하세요.\n'));
+  console.log(chalk.blue.bold(`\n${t('attach_tg_title')}\n`));
+  console.log(chalk.dim(t('attach_tg_step1')));
+  console.log(chalk.dim(t('attach_tg_step2') + '\n'));
 
   const botToken = await input({
-    message: 'Bot Token (예: 7123456789:AAFxx...):',
-    validate: (val) => val.includes(':') ? true : '유효하지 않은 토큰 형식입니다.',
+    message: t('attach_tg_token'),
+    validate: (val) => val.includes(':') ? true : t('attach_tg_token_invalid'),
   });
 
   const addAllowList = await confirm({
-    message: '특정 채팅 ID만 허용하시겠습니까? (보안 강화 — 미설정 시 누구나 봇 사용 가능)',
+    message: t('attach_tg_allowlist_prompt'),
     default: true,
   });
 
   let allowedChatIds: number[] | undefined;
 
   if (addAllowList) {
-    console.log(chalk.dim('\n봇에게 메시지를 보낸 후 https://api.telegram.org/bot{TOKEN}/getUpdates 에서 chat.id를 확인하세요.'));
-    const chatIdInput = await input({
-      message: '허용할 Chat ID (복수 입력 시 쉼표로 구분, 예: 123456789,987654321):',
-    });
-    allowedChatIds = chatIdInput.split(',').map((s) => parseInt(s.trim(), 10)).filter(Boolean);
+    console.log(chalk.dim(t('attach_tg_allowlist_hint')));
+    const chatIdInput = await input({ message: t('attach_tg_allowlist_input') });
+    allowedChatIds = chatIdInput
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter(Boolean);
   }
 
-  updateConfig({
-    telegram: { botToken, allowedChatIds },
-  });
+  updateConfig({ telegram: { botToken, allowedChatIds } });
 
-  console.log(chalk.green('\n✓ Telegram 봇 설정이 저장되었습니다.'));
-  console.log(chalk.dim("'agentblue start' 실행 시 Telegram 봇이 자동으로 시작됩니다."));
-  console.log(chalk.dim('\n봇에서 사용 가능한 명령어:'));
-  console.log(chalk.dim('  /run <명령>   — Android 기기에 명령 전송'));
-  console.log(chalk.dim('  /status       — 현재 실행 상태 확인'));
-  console.log(chalk.dim('  /stop         — 실행 중인 작업 취소 요청'));
-  console.log(chalk.dim('  /session      — 세션 코드 확인\n'));
+  console.log(chalk.green(t('attach_tg_saved')));
+  console.log(chalk.dim(t('attach_tg_next')));
+  console.log(chalk.dim(t('attach_tg_commands_title')));
+  console.log(chalk.dim(t('attach_tg_cmd_run')));
+  console.log(chalk.dim(t('attach_tg_cmd_status')));
+  console.log(chalk.dim(t('attach_tg_cmd_stop')));
+  console.log(chalk.dim(t('attach_tg_cmd_session') + '\n'));
 }
 
 async function attachDiscord(): Promise<void> {
-  console.log(chalk.blue.bold('\nDiscord 봇 설정\n'));
-  console.log(chalk.dim('1. https://discord.com/developers/applications 에서 애플리케이션을 생성하세요.'));
-  console.log(chalk.dim('2. Bot 탭에서 토큰을 복사하세요.'));
-  console.log(chalk.dim('3. OAuth2 탭에서 bot + applications.commands 권한으로 서버에 초대하세요.\n'));
+  console.log(chalk.blue.bold(`\n${t('attach_dc_title')}\n`));
+  console.log(chalk.dim(t('attach_dc_step1')));
+  console.log(chalk.dim(t('attach_dc_step2')));
+  console.log(chalk.dim(t('attach_dc_step3') + '\n'));
 
   const botToken = await input({
-    message: 'Bot Token:',
-    validate: (val) => val.length > 20 ? true : '유효하지 않은 토큰입니다.',
+    message: t('attach_dc_token'),
+    validate: (val) => val.length > 20 ? true : t('attach_dc_token_invalid'),
   });
 
   const guildId = await input({
-    message: 'Server (Guild) ID: (Discord 개발자 모드 활성화 후 서버 우클릭 → ID 복사)',
-    validate: (val) => /^\d+$/.test(val) ? true : '숫자만 입력하세요.',
+    message: t('attach_dc_guild'),
+    validate: (val) => /^\d+$/.test(val) ? true : t('attach_dc_id_invalid'),
   });
 
   const channelId = await input({
-    message: 'Channel ID: (명령을 수신할 채널 우클릭 → ID 복사)',
-    validate: (val) => /^\d+$/.test(val) ? true : '숫자만 입력하세요.',
+    message: t('attach_dc_channel'),
+    validate: (val) => /^\d+$/.test(val) ? true : t('attach_dc_id_invalid'),
   });
 
-  updateConfig({
-    discord: { botToken, guildId, channelId },
-  });
+  updateConfig({ discord: { botToken, guildId, channelId } });
 
-  console.log(chalk.green('\n✓ Discord 봇 설정이 저장되었습니다.'));
-  console.log(chalk.dim("'agentblue start' 실행 시 Discord 봇이 자동으로 시작됩니다."));
-  console.log(chalk.dim('\n봇에서 사용 가능한 슬래시 커맨드:'));
-  console.log(chalk.dim('  /run <명령>   — Android 기기에 명령 전송'));
-  console.log(chalk.dim('  /status       — 현재 실행 상태 확인'));
-  console.log(chalk.dim('  /stop         — 실행 중인 작업 취소 요청\n'));
+  console.log(chalk.green(t('attach_dc_saved')));
+  console.log(chalk.dim(t('attach_dc_next')));
+  console.log(chalk.dim(t('attach_dc_commands_title')));
+  console.log(chalk.dim(t('attach_dc_cmd_run')));
+  console.log(chalk.dim(t('attach_dc_cmd_status') + '\n'));
 }

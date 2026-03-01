@@ -1,54 +1,60 @@
 # AgentBlueCLI
 
-터미널과 메시징 플랫폼에서 Android 기기를 AI로 자동 제어하는 오픈소스 CLI 도구입니다.
+Open-source CLI tool to control your Android device with natural language — from your terminal, Telegram, or Discord.
 
-## 개요
+## Overview
 
 ```
-┌─────────────────────────┐        ┌─────────────────┐        ┌──────────────────────┐
-│  AgentBlueCLI           │        │  Firebase        │        │  AgentBlue (Android) │
-│                         │◄──────►│  Firestore       │◄──────►│                      │
-│  · Terminal REPL        │        │  (Relay Server)  │        │  · 접근성 서비스      │
-│  · Telegram Bot         │        │                  │        │  · ReAct 루프         │
-│  · Discord Bot          │        │                  │        │  · LLM API 호출       │
-└─────────────────────────┘        └─────────────────┘        └──────────────────────┘
+┌─────────────────────────┐        ┌──────────────────┐        ┌──────────────────────┐
+│  AgentBlueCLI           │        │  Firebase         │        │  AgentBlue (Android) │
+│                         │◄──────►│  Firestore        │◄──────►│                      │
+│  · Terminal REPL        │        │  (Relay Server)   │        │  · Accessibility Svc │
+│  · Telegram Bot         │        │                   │        │  · ReAct Loop        │
+│  · Discord Bot          │        │                   │        │  · LLM API calls     │
+└─────────────────────────┘        └──────────────────┘        └──────────────────────┘
 ```
 
-## 설치
+Type a command in your terminal (or Telegram / Discord), and AgentBlue executes it on your Android device step-by-step using a ReAct loop powered by your choice of LLM.
 
-### 사전 요구 사항
+## Requirements
 
-- Node.js 18 이상
-- Android 기기에 [AgentBlue 앱](../AgentBlue) 설치
+- **Node.js** 18+
+- **AgentBlue** Android app installed on your device ([../AgentBlue](../AgentBlue))
 
-### 글로벌 설치 (권장)
+## Installation
+
+### From npm (recommended)
 
 ```bash
 npm install -g @agentblue/cli
 ```
 
-### 개발용 (소스에서 빌드)
+### From source
 
 ```bash
-cd AgentBlueCLI
+git clone https://github.com/your-username/AgentBlue.git
+cd AgentBlue/AgentBlueCLI
 npm install
 npm run build
-npm link packages/cli
+cd packages/cli && npm link
 ```
 
-## 빠른 시작
+## Quick Start
 
-### 1. 초기 설정
+### 1. Initialize
 
 ```bash
 agentblue init
 ```
 
-Firebase 설정 방식을 선택합니다:
-- **기본 공유 서버**: 별도 설정 없이 즉시 사용 가능
-- **내 Firebase**: 직접 Firebase 프로젝트를 생성해 완전히 독립적으로 운영
+Select your language and Firebase backend:
 
-### 2. 세션 시작
+| Option | Description |
+|--------|-------------|
+| Shared server *(default)* | Use the developer-hosted Firebase project — no setup needed |
+| Self-hosted | Point to your own Firebase project for full independence |
+
+### 2. Start a session
 
 ```bash
 agentblue start
@@ -58,54 +64,73 @@ agentblue start
 AgentBlue v2.0.0
 ────────────────────────────────────────────
 Session Code: ABCD1234
-Android 앱을 열고 메인 화면에 이 코드를 입력하세요.
+Open the AgentBlue app and enter this code in the Session field.
 ────────────────────────────────────────────
 
-Waiting for device connection...
-✓ 기기가 연결되었습니다!
+⠸ Waiting for device...
+✓ Device connected!
 
-> YouTube에서 BTS 최신 노래 검색해줘
+> Search for BTS on YouTube
 
 ⠸ Processing... Step 3/15
   👆 [CLICK] "YouTube" → SUCCESS
   ⌨️ [TYPE] "BTS" → SUCCESS
-  👆 [CLICK] 검색 → RUNNING...
+  👆 [CLICK] Search → RUNNING...
 
-✓ 완료!
+✓ Done!
 
 >
 ```
 
-### 3. 단일 명령 전송 (스크립트/자동화용)
+### 3. REPL slash commands (after `agentblue start`)
+
+| Input | Action |
+|-------|--------|
+| `<natural language>` | Send command to Android |
+| `/stop` | Cancel the currently running task |
+| `/setting` | Change agent settings (max steps, delay, browser, language) |
+| `/model` | Change AI model (provider, model, API key) |
+| `/help` | Show available slash commands |
+| `exit` / Ctrl+C | End session |
+
+### 4. Remote settings (standalone or in REPL)
 
 ```bash
-agentblue send "카카오톡에서 홍길동에게 '오늘 회의 취소' 메시지 보내줘"
+agentblue setting   # Agent settings on paired device
+agentblue model     # AI model settings on paired device
 ```
 
-## Telegram 봇 연동
+### 5. Send a one-off command (for scripts / automation)
 
-### 설정
+```bash
+agentblue send "Send 'running late' to John on KakaoTalk"
+```
+
+## Telegram Integration
+
+### Setup
 
 ```bash
 agentblue attach telegram
 ```
 
-1. Telegram에서 [@BotFather](https://t.me/botfather)를 찾아 `/newbot`으로 봇 생성
-2. 받은 토큰을 입력
-3. 허용할 Chat ID 설정 (보안 강화)
+1. Chat with [@BotFather](https://t.me/botfather) → `/newbot` to create a bot
+2. Paste the token when prompted
+3. Optionally restrict access to specific Chat IDs
 
-### 사용
+### Usage
 
 ```
-/run YouTube에서 BTS 최신 노래 검색해줘
+/run Search for BTS on YouTube
+/run Open Chrome and go to github.com
 /status
 /session
 /help
 ```
 
-`agentblue start` 실행 시 Telegram 봇이 자동으로 시작됩니다.
+The bot starts automatically when you run `agentblue start`.
 
-### 독립 실행 (서버 운영용)
+### Standalone daemon (for servers)
 
 ```bash
 npm install -g @agentblue/telegram
@@ -115,27 +140,29 @@ AGENTBLUE_SESSION_ID=yyy \
 agentblue-telegram
 ```
 
-## Discord 봇 연동
+## Discord Integration
 
-### 설정
+### Setup
 
 ```bash
 agentblue attach discord
 ```
 
-1. [Discord 개발자 포털](https://discord.com/developers/applications)에서 애플리케이션 생성
-2. Bot 탭에서 토큰 복사
-3. OAuth2 > URL Generator에서 `bot` + `applications.commands` 권한으로 서버에 초대
-4. Server ID, Channel ID 입력
+1. Create an application at [discord.com/developers](https://discord.com/developers/applications)
+2. Under **Bot**, copy the token
+3. Under **OAuth2**, invite the bot with `bot` + `applications.commands` scopes
+4. Enter your Server ID, Channel ID, and Client ID
 
-### 사용
+### Usage
 
 ```
-/run YouTube에서 BTS 검색해줘
+/run command:Search for BTS on YouTube
 /status
 ```
 
-### 독립 실행 (서버 운영용)
+Results are delivered as live-updating embedded messages.
+
+### Standalone daemon (for servers)
 
 ```bash
 npm install -g @agentblue/discord
@@ -148,25 +175,34 @@ AGENTBLUE_CLIENT_ID=vvv \
 agentblue-discord
 ```
 
-## 자체 Firebase 프로젝트 사용 (고급)
+## Self-Hosted Firebase
 
-기본 공유 서버 대신 직접 Firebase 프로젝트를 운영하려면:
+By default AgentBlueCLI uses a shared Firebase project. For full independence:
 
-1. [Firebase 콘솔](https://console.firebase.google.com)에서 프로젝트 생성
-2. Firestore Database 생성 (프로덕션 모드)
-3. Authentication > 로그인 제공업체 > 익명 활성화
-4. 보안 규칙 적용: `docs/firebase-rules.md` 참고
-5. `agentblue init` 실행 시 "내 Firebase 프로젝트 사용" 선택
+1. Create a project at [Firebase Console](https://console.firebase.google.com)
+2. Enable **Firestore Database** (production mode)
+3. Enable **Authentication → Anonymous**
+4. Register an Android app with package `com.example.agentdroid` and download `google-services.json`
+5. Apply the security rules from [docs/firebase-rules.md](docs/firebase-rules.md)
+6. Run `agentblue init` and select **Self-hosted**
 
-Android 앱도 동일한 Firebase 프로젝트의 `google-services.json`을 사용해야 합니다.
+## Language
 
-## 설정 파일
+Language is configured during `agentblue init` and stored in `~/.agentblue/config.json`. To change it, run `agentblue init` again.
 
-설정은 `~/.agentblue/config.json`에 저장됩니다:
+| Language | Value |
+|----------|-------|
+| English *(default)* | `"en"` |
+| Korean | `"ko"` |
+
+## Configuration
+
+All settings are saved to `~/.agentblue/config.json`:
 
 ```json
 {
-  "firebase": { ... },
+  "language": "en",
+  "firebase": { "apiKey": "...", "projectId": "...", "..." : "..." },
   "sessionId": "...",
   "sessionCode": "ABCD1234",
   "telegram": {
@@ -181,17 +217,32 @@ Android 앱도 동일한 Firebase 프로젝트의 `google-services.json`을 사�
 }
 ```
 
-## 패키지 구조
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `agentblue init` | First-time setup wizard (Firebase + language) |
+| `agentblue start` | Start an interactive session with your Android device |
+| `agentblue send "<task>"` | Send a single command (non-interactive) |
+| `agentblue setting` | Remotely change agent settings on paired device |
+| `agentblue model` | Remotely change AI model settings on paired device |
+| `agentblue attach telegram` | Configure Telegram bot |
+| `agentblue attach discord` | Configure Discord bot |
+
+## Package Structure
 
 ```
 AgentBlueCLI/
 ├── packages/
-│   ├── cli/        — 메인 CLI (@agentblue/cli)
-│   ├── telegram/   — Telegram 봇 데몬 (@agentblue/telegram)
-│   └── discord/    — Discord 봇 데몬 (@agentblue/discord)
-└── docs/           — 설정 가이드
+│   ├── cli/        — Main CLI  (@agentblue/cli)
+│   ├── telegram/   — Telegram daemon  (@agentblue/telegram)
+│   └── discord/    — Discord daemon  (@agentblue/discord)
+└── docs/
+    ├── getting-started.md
+    ├── telegram-setup.md
+    └── discord-setup.md
 ```
 
-## 라이선스
+## License
 
 MIT

@@ -13,11 +13,11 @@ object AgentPreferences {
 
     private const val DEFAULT_MAX_STEPS = 15
     private const val DEFAULT_STEP_DELAY_MS = 1500L
-    const val DEFAULT_BROWSER = "기본 브라우저"
-    const val DEFAULT_LANGUAGE = "한국어"
+    const val DEFAULT_BROWSER = "Default Browser"
+    const val DEFAULT_LANGUAGE = "English"
 
-    val BROWSER_OPTIONS = listOf("Chrome", "Samsung Internet", "Firefox", "기본 브라우저")
-    val LANGUAGE_OPTIONS = listOf("한국어", "English")
+    val BROWSER_OPTIONS = listOf("Chrome", "Samsung Internet", "Firefox", "Default Browser")
+    val LANGUAGE_OPTIONS = listOf("English", "한국어")
 
     private var prefs: SharedPreferences? = null
 

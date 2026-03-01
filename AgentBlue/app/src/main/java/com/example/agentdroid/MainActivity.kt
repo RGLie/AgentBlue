@@ -200,7 +200,7 @@ fun AppNavigator(
 
         AppScreen.PRIVACY_POLICY -> {
             LegalDocumentScreen(
-                title = "개인정보 처리방침",
+                title = "Privacy Policy",
                 content = LegalTexts.PRIVACY_POLICY,
                 onBack = { currentScreen = previousScreen }
             )
@@ -208,7 +208,7 @@ fun AppNavigator(
 
         AppScreen.TERMS_OF_SERVICE -> {
             LegalDocumentScreen(
-                title = "이용약관",
+                title = "Terms of Service",
                 content = LegalTexts.TERMS_OF_SERVICE,
                 onBack = { currentScreen = previousScreen }
             )
@@ -216,7 +216,7 @@ fun AppNavigator(
 
         AppScreen.ACCESSIBILITY_DISCLOSURE -> {
             LegalDocumentScreen(
-                title = "접근성 API 사용 고지",
+                title = "Accessibility API Usage Disclosure",
                 content = LegalTexts.ACCESSIBILITY_DISCLOSURE,
                 onBack = { currentScreen = previousScreen }
             )
@@ -245,7 +245,7 @@ fun AgentDroidApp(
                     IconButton(onClick = { showInfoDialog = true }) {
                         Icon(
                             Icons.Default.Info,
-                            contentDescription = "앱 정보",
+                            contentDescription = "App info",
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -253,7 +253,7 @@ fun AgentDroidApp(
                         IconButton(onClick = { showClearDialog = true }) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "기록 삭제",
+                                contentDescription = "Clear history",
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -285,12 +285,12 @@ fun AgentDroidApp(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "실행 기록",
+                            "History",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            "${history.size}건",
+                            "${history.size} items",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -316,19 +316,19 @@ fun AgentDroidApp(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("기록 삭제") },
-            text = { Text("모든 실행 기록을 삭제하시겠습니까?") },
+            title = { Text("Clear History") },
+            text = { Text("Delete all execution history?") },
             confirmButton = {
                 TextButton(onClick = {
                     AgentStateManager.clearHistory()
                     showClearDialog = false
                 }) {
-                    Text("삭제", color = StatusFailed)
+                    Text("Delete", color = StatusFailed)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {
-                    Text("취소")
+                    Text("Cancel")
                 }
             }
         )
@@ -367,7 +367,7 @@ fun ModelSettingsCard() {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "AI Agent 모델 설정",
+                        "AI Model Settings",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -379,7 +379,7 @@ fun ModelSettingsCard() {
                     )
                 }
                 Text(
-                    if (expanded) "접기" else "변경",
+                    if (expanded) "Collapse" else "Change",
                     color = AgentBlue,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
@@ -393,7 +393,7 @@ fun ModelSettingsCard() {
                     color = StatusFailed.copy(alpha = 0.1f)
                 ) {
                     Text(
-                        "API 키를 설정해주세요",
+                        "Please set your API key",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         color = StatusFailed,
                         fontSize = 12.sp,
@@ -413,7 +413,7 @@ fun ModelSettingsCard() {
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "프로바이더",
+                        "Provider",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -444,7 +444,7 @@ fun ModelSettingsCard() {
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "모델",
+                        "Model",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -504,7 +504,7 @@ fun ModelSettingsCard() {
                             apiKeyText = it
                             savedMessage = null
                         },
-                        placeholder = { Text("API 키를 입력하세요") },
+                        placeholder = { Text("Enter your API key") },
                         singleLine = true,
                         visualTransformation = if (passwordVisible) {
                             VisualTransformation.None
@@ -514,7 +514,7 @@ fun ModelSettingsCard() {
                         trailingIcon = {
                             TextButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Text(
-                                    if (passwordVisible) "숨기기" else "보기",
+                                    if (passwordVisible) "Hide" else "Show",
                                     fontSize = 12.sp,
                                     color = AgentBlue
                                 )
@@ -529,13 +529,13 @@ fun ModelSettingsCard() {
                     Button(
                         onClick = {
                             ModelPreferences.save(selectedProvider, selectedModelId, apiKeyText)
-                            savedMessage = "설정이 저장되었습니다"
+                            savedMessage = "Settings saved"
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = AgentBlue),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("저장", modifier = Modifier.padding(vertical = 4.dp))
+                        Text("Save", modifier = Modifier.padding(vertical = 4.dp))
                     }
 
                     savedMessage?.let { msg ->
@@ -585,19 +585,19 @@ fun AgentSettingsCard() {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "에이전트 설정",
+                        "Agent Settings",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "최대 ${maxSteps.toInt()}스텝 · 딜레이 ${"%.1f".format(stepDelay / 1000f)}초 · $selectedBrowser",
+                        "Max ${maxSteps.toInt()} steps · Delay ${"%.1f".format(stepDelay / 1000f)}s · $selectedBrowser",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Text(
-                    if (expanded) "접기" else "변경",
+                    if (expanded) "Collapse" else "Change",
                     color = AgentBlue,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
@@ -615,13 +615,13 @@ fun AgentSettingsCard() {
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "최대 스텝 수",
+                        "Max Steps",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "에이전트가 최대 몇 번까지 시도할지 설정합니다.",
+                        "Maximum number of attempts the agent will make.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -652,13 +652,13 @@ fun AgentSettingsCard() {
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "스텝 딜레이",
+                        "Step Delay",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "각 스텝 사이의 대기 시간입니다. 느린 기기에서는 길게 설정하세요.",
+                        "Wait time between steps. Increase for slower devices.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -678,7 +678,7 @@ fun AgentSettingsCard() {
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "${"%.1f".format(stepDelay / 1000f)}초",
+                            "${"%.1f".format(stepDelay / 1000f)}s",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = AgentBlue
@@ -688,13 +688,13 @@ fun AgentSettingsCard() {
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "기본 브라우저",
+                        "Default Browser",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "검색 시 사용할 브라우저 앱을 지정합니다.",
+                        "Browser app to use for web searches.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -719,13 +719,13 @@ fun AgentSettingsCard() {
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        "응답 언어",
+                        "Response Language",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "AI 에이전트의 추론 언어를 설정합니다.",
+                        "Language used for the AI agent's reasoning.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -752,13 +752,13 @@ fun AgentSettingsCard() {
                             AgentPreferences.setStepDelayMs(stepDelay.toLong())
                             AgentPreferences.setDefaultBrowser(selectedBrowser)
                             AgentPreferences.setLanguage(selectedLanguage)
-                            savedMessage = "설정이 저장되었습니다"
+                            savedMessage = "Settings saved"
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = AgentBlue),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("저장", modifier = Modifier.padding(vertical = 4.dp))
+                        Text("Save", modifier = Modifier.padding(vertical = 4.dp))
                     }
 
                     savedMessage?.let { msg ->
@@ -795,13 +795,13 @@ fun SettingsCard(
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
-                "서비스 설정",
+                "Permissions",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "AgentDroid를 사용하려면 아래 설정을 활성화해주세요.",
+                "Enable the permissions below to use AgentBlue.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -813,7 +813,7 @@ fun SettingsCard(
                 colors = ButtonDefaults.buttonColors(containerColor = AgentBlue),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("접근성 서비스 설정", modifier = Modifier.padding(vertical = 4.dp))
+                Text("Accessibility Service", modifier = Modifier.padding(vertical = 4.dp))
             }
 
             Spacer(Modifier.height(8.dp))
@@ -823,7 +823,7 @@ fun SettingsCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("화면 위에 표시 권한 설정", modifier = Modifier.padding(vertical = 4.dp))
+                Text("Overlay Permission", modifier = Modifier.padding(vertical = 4.dp))
             }
         }
     }
@@ -845,10 +845,10 @@ fun HistoryCard(record: ExecutionEntity) {
         else -> StatusIdle
     }
     val statusLabel = when (status) {
-        AgentStatus.COMPLETED -> "완료"
-        AgentStatus.FAILED -> "실패"
-        AgentStatus.CANCELLED -> "취소"
-        else -> "기타"
+        AgentStatus.COMPLETED -> "Done"
+        AgentStatus.FAILED -> "Failed"
+        AgentStatus.CANCELLED -> "Cancelled"
+        else -> "Other"
     }
 
     Card(
@@ -880,14 +880,14 @@ fun HistoryCard(record: ExecutionEntity) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "  ·  ${steps.size}스텝",
+                            "  ·  ${steps.size} steps",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (record.endTime != null) {
                             val duration = (record.endTime - record.startTime) / 1000
                             Text(
-                                "  ·  ${duration}초",
+                                "  ·  ${duration}s",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -946,7 +946,7 @@ fun HistoryCard(record: ExecutionEntity) {
             if (steps.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    if (expanded) "접기" else "상세 보기 (${steps.size}스텝)",
+                    if (expanded) "Collapse" else "Details (${steps.size} steps)",
                     style = MaterialTheme.typography.labelSmall,
                     color = AgentBlue,
                     fontWeight = FontWeight.SemiBold,
@@ -1066,7 +1066,7 @@ fun SessionCard() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "세션 연결",
+                    "Session",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -1076,7 +1076,7 @@ fun SessionCard() {
                     else StatusIdle.copy(alpha = 0.15f)
                 ) {
                     Text(
-                        if (isPaired) "연결됨" else "미연결",
+                        if (isPaired) "Connected" else "Not connected",
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         color = if (isPaired) StatusRunning else StatusIdle,
                         fontSize = 12.sp,
@@ -1087,8 +1087,8 @@ fun SessionCard() {
 
             Spacer(Modifier.height(4.dp))
             Text(
-                if (isPaired) "세션 코드: $pairedCode"
-                else "Desktop에서 생성한 세션 코드를 입력하세요.",
+                if (isPaired) "Session code: $pairedCode"
+                else "Enter the session code generated by AgentBlueCLI.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1100,7 +1100,7 @@ fun SessionCard() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "⚠ 세션 코드를 절대 타인에게 공유하지 마세요. 코드를 아는 제3자가 기기를 원격 조작할 수 있습니다.",
+                    "⚠ Never share your session code with anyone. Third parties who know the code can remotely control your device.",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     color = StatusCancelled,
                     fontSize = 12.sp,
@@ -1117,7 +1117,7 @@ fun SessionCard() {
                         sessionCode = it.uppercase().take(8)
                         errorMessage = null
                     },
-                    placeholder = { Text("세션 코드 (8자리)") },
+                    placeholder = { Text("Session code (8 chars)") },
                     singleLine = true,
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth(),
@@ -1134,7 +1134,7 @@ fun SessionCard() {
                 Button(
                     onClick = {
                         if (sessionCode.length != 8) {
-                            errorMessage = "8자리 세션 코드를 입력해주세요."
+                            errorMessage = "Please enter an 8-character session code."
                             return@Button
                         }
                         isLoading = true
@@ -1147,7 +1147,7 @@ fun SessionCard() {
                             .addOnSuccessListener { snapshots ->
                                 if (snapshots.isEmpty) {
                                     isLoading = false
-                                    errorMessage = "유효한 세션을 찾을 수 없습니다."
+                                    errorMessage = "No valid session found."
                                     return@addOnSuccessListener
                                 }
                                 val doc = snapshots.documents.first()
@@ -1166,12 +1166,12 @@ fun SessionCard() {
                                     AgentAccessibilityService.instance?.restartCommandListener()
                                 }.addOnFailureListener { e ->
                                     isLoading = false
-                                    errorMessage = "연결 실패: ${e.message}"
+                                    errorMessage = "Connection failed: ${e.message}"
                                 }
                             }
                             .addOnFailureListener { e ->
                                 isLoading = false
-                                errorMessage = "검색 실패: ${e.message}"
+                                errorMessage = "Search failed: ${e.message}"
                             }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -1180,9 +1180,9 @@ fun SessionCard() {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isLoading) {
-                        Text("연결 중...", modifier = Modifier.padding(vertical = 4.dp))
+                        Text("Connecting...", modifier = Modifier.padding(vertical = 4.dp))
                     } else {
-                        Text("세션 연결", modifier = Modifier.padding(vertical = 4.dp))
+                        Text("Connect", modifier = Modifier.padding(vertical = 4.dp))
                     }
                 }
             } else {
@@ -1205,7 +1205,7 @@ fun SessionCard() {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("세션 연결 해제", modifier = Modifier.padding(vertical = 4.dp))
+                    Text("Disconnect", modifier = Modifier.padding(vertical = 4.dp))
                 }
             }
         }
@@ -1241,7 +1241,7 @@ fun InfoDialog(
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    "AgentDroid는 AI가 안드로이드 화면을 분석하고 자동으로 조작하는 에이전트 앱입니다. PC 또는 다른 기기의 웹 브라우저에서 명령을 입력하면, 연결된 안드로이드 기기가 자동으로 실행합니다.",
+                    "AgentBlue is an AI agent app that analyzes your Android screen and automates tasks. Send commands from AgentBlueCLI or your browser, and the connected Android device executes them automatically.",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -1250,16 +1250,16 @@ fun InfoDialog(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "초기 설정",
+                    "Initial Setup",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(8.dp))
 
                 val setupSteps = listOf(
-                    "1. 접근성 서비스를 활성화합니다.",
-                    "2. 화면 위에 표시 권한을 허용합니다.",
-                    "3. AI 모델과 API 키를 설정합니다."
+                    "1. Enable the Accessibility Service.",
+                    "2. Allow the Overlay permission.",
+                    "3. Set your AI model and API key."
                 )
                 setupSteps.forEach { step ->
                     Text(
@@ -1275,13 +1275,13 @@ fun InfoDialog(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "Desktop 웹에서 원격 명령 실행",
+                    "Remote Control via CLI or Web",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "PC나 다른 기기의 브라우저에서 아래 웹 페이지에 접속하여 명령을 보낼 수 있습니다.",
+                    "Use AgentBlueCLI or open the web dashboard in a browser to send commands remotely.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1304,13 +1304,13 @@ fun InfoDialog(
                             OutlinedButton(
                                 onClick = {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(ClipData.newPlainText("AgentDroid Web", webDashboardUrl))
-                                    linkCopiedMessage = "링크가 복사되었습니다"
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("AgentBlue Web", webDashboardUrl))
+                                    linkCopiedMessage = "Link copied"
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("링크 복사", fontSize = 12.sp)
+                                Text("Copy link", fontSize = 12.sp)
                             }
                         }
                         linkCopiedMessage?.let { msg ->
@@ -1332,10 +1332,10 @@ fun InfoDialog(
                 Spacer(Modifier.height(10.dp))
 
                 val remoteSteps = listOf(
-                    "1. 웹 페이지에서 '세션 생성'을 눌러 8자리 세션 코드를 발급받습니다.",
-                    "2. 이 앱의 '세션 연결' 카드에서 해당 코드를 입력합니다.",
-                    "3. 연결 완료 후, 웹에서 명령을 입력하면 이 기기에서 자동 실행됩니다.",
-                    "4. 실행 상태와 결과를 웹에서 실시간으로 확인할 수 있습니다."
+                    "1. Run agentblue start in your terminal to get an 8-char session code.",
+                    "2. Enter the code in this app's Session card.",
+                    "3. Once connected, type commands in the CLI and this device executes them.",
+                    "4. View real-time status and results in the CLI."
                 )
                 remoteSteps.forEach { step ->
                     Text(
@@ -1351,13 +1351,13 @@ fun InfoDialog(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "기기에서 직접 명령 실행",
+                    "On-device Commands",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "세션 연결 없이도 화면에 표시되는 플로팅 버튼을 눌러 직접 명령을 입력할 수 있습니다.",
+                    "Tap the floating button on screen to enter commands directly without a CLI session.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1367,7 +1367,7 @@ fun InfoDialog(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "법적 고지",
+                    "Legal",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -1378,7 +1378,7 @@ fun InfoDialog(
                     onNavigateToLegal(AppScreen.PRIVACY_POLICY)
                 }) {
                     Text(
-                        "개인정보 처리방침",
+                        "Privacy Policy",
                         color = AgentBlue,
                         fontSize = 14.sp
                     )
@@ -1389,7 +1389,7 @@ fun InfoDialog(
                     onNavigateToLegal(AppScreen.TERMS_OF_SERVICE)
                 }) {
                     Text(
-                        "이용약관",
+                        "Terms of Service",
                         color = AgentBlue,
                         fontSize = 14.sp
                     )
@@ -1400,7 +1400,7 @@ fun InfoDialog(
                     onNavigateToLegal(AppScreen.ACCESSIBILITY_DISCLOSURE)
                 }) {
                     Text(
-                        "접근성 API 사용 고지",
+                        "Accessibility API Disclosure",
                         color = AgentBlue,
                         fontSize = 14.sp
                     )
@@ -1411,7 +1411,7 @@ fun InfoDialog(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "변경 로그",
+                    "Changelog",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -1431,10 +1431,10 @@ fun InfoDialog(
                         )
                         Spacer(Modifier.height(4.dp))
                         val changes110 = listOf(
-                            "에이전트 동작 설정 추가 (최대 스텝, 딜레이, 브라우저, 언어)",
-                            "HOME 액션 지원",
-                            "Stuck 감지 및 자동 복구 시스템",
-                            "앱 정보 다이얼로그"
+                            "Agent behavior settings (max steps, delay, browser, language)",
+                            "HOME action support",
+                            "Stuck detection and auto-recovery system",
+                            "App info dialog"
                         )
                         changes110.forEach { change ->
                             Text(
@@ -1462,7 +1462,7 @@ fun InfoDialog(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "· 최초 릴리즈",
+                            "· Initial release",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1472,7 +1472,7 @@ fun InfoDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("닫기", color = AgentBlue, fontWeight = FontWeight.SemiBold)
+                Text("Close", color = AgentBlue, fontWeight = FontWeight.SemiBold)
             }
         }
     )
@@ -1491,13 +1491,13 @@ fun EmptyState() {
         Text("🤖", fontSize = 48.sp)
         Spacer(Modifier.height(16.dp))
         Text(
-            "아직 실행 기록이 없습니다",
+            "No history yet",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "플로팅 버튼을 눌러 첫 명령을 시작해보세요",
+            "Tap the floating button or send a command from the CLI to get started",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )

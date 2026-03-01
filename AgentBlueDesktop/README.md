@@ -1,4 +1,6 @@
-# AgentBlueDesktop - Desktop Commander for AI Android Agent
+# AgentBlueDesktop — Desktop Commander for AI Android Agent
+
+> **Legacy.** Superseded by [AgentBlueCLI](../AgentBlueCLI), which adds `/stop`, `/setting`, `/model`, Telegram, Discord, and language settings. Use AgentBlueCLI for new projects.
 
 A cross-platform desktop/web app for remotely controlling [AgentBlue](../AgentBlue) on Android devices. Send natural-language commands from your PC and monitor the AI agent's execution in real time — all powered by Firebase Firestore.
 

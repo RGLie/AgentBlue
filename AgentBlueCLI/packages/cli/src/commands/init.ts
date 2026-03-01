@@ -1,22 +1,33 @@
 import chalk from 'chalk';
 import { select, input, confirm } from '@inquirer/prompts';
 import { saveConfig, getConfig, DEFAULT_FIREBASE_CONFIG, type FirebaseConfig } from '../config.js';
+import { t, setLangCache, type Lang } from '../i18n.js';
 
 export async function initCommand(): Promise<void> {
-  console.log(chalk.blue.bold('\nAgentBlue 초기 설정\n'));
+  // Language selection happens first so the rest of the wizard is in the chosen language
+  const language = await select<Lang>({
+    message: 'Language / 언어',
+    choices: [
+      { value: 'en', name: 'English' },
+      { value: 'ko', name: '한국어 (Korean)' },
+    ],
+  });
+  setLangCache(language);
+
+  console.log(chalk.blue.bold(`\n${t('init_title')}\n`));
 
   const mode = await select({
-    message: 'Firebase 설정 방식을 선택하세요:',
+    message: t('init_firebase_prompt'),
     choices: [
       {
         value: 'default',
-        name: '기본 공유 서버 사용 (추천) — 별도 설정 불필요',
-        description: '개발자가 운영하는 Firebase 프로젝트를 공유합니다. 즉시 사용 가능합니다.',
+        name: t('init_firebase_shared'),
+        description: t('init_firebase_shared_desc'),
       },
       {
         value: 'custom',
-        name: '내 Firebase 프로젝트 사용 (고급) — 완전한 셀프호스팅',
-        description: 'Firebase 콘솔에서 프로젝트를 직접 생성하고 자격 증명을 입력합니다.',
+        name: t('init_firebase_custom'),
+        description: t('init_firebase_custom_desc'),
       },
     ],
   });
@@ -24,26 +35,20 @@ export async function initCommand(): Promise<void> {
   let firebaseConfig: FirebaseConfig = DEFAULT_FIREBASE_CONFIG;
 
   if (mode === 'custom') {
-    console.log(
-      chalk.dim(
-        '\nFirebase 콘솔(https://console.firebase.google.com)에서\n' +
-        '프로젝트 설정 > 일반 > 내 앱 > 구성 값을 확인하세요.\n',
-      ),
-    );
-
+    console.log(chalk.dim(t('init_firebase_custom_hint')));
     firebaseConfig = {
-      apiKey: await input({ message: 'API Key:' }),
-      authDomain: await input({ message: 'Auth Domain (예: myproject.firebaseapp.com):' }),
-      projectId: await input({ message: 'Project ID:' }),
-      storageBucket: await input({ message: 'Storage Bucket (예: myproject.firebasestorage.app):' }),
-      messagingSenderId: await input({ message: 'Messaging Sender ID:' }),
-      appId: await input({ message: 'App ID:' }),
+      apiKey: await input({ message: t('init_firebase_api_key') }),
+      authDomain: await input({ message: t('init_firebase_auth_domain') }),
+      projectId: await input({ message: t('init_firebase_project_id') }),
+      storageBucket: await input({ message: t('init_firebase_storage_bucket') }),
+      messagingSenderId: await input({ message: t('init_firebase_sender_id') }),
+      appId: await input({ message: t('init_firebase_app_id') }),
     };
   }
 
   const current = getConfig();
-  saveConfig({ ...current, firebase: firebaseConfig });
+  saveConfig({ ...current, firebase: firebaseConfig, language });
 
-  console.log(chalk.green('\n✓ 설정이 저장되었습니다. (~/.agentblue/config.json)'));
-  console.log(chalk.dim("'agentblue start'를 실행하여 Android 기기와 연결하세요.\n"));
+  console.log(chalk.green(t('init_saved')));
+  console.log(chalk.dim(t('init_next')));
 }

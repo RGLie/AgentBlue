@@ -4,33 +4,45 @@ import { initCommand } from './commands/init.js';
 import { startCommand } from './commands/start.js';
 import { sendCommand } from './commands/send.js';
 import { attachCommand } from './commands/attach.js';
+import { settingCommand } from './commands/setting.js';
+import { modelCommand } from './commands/model.js';
 
 const program = new Command();
 
 program
   .name('agentblue')
-  .description('AgentBlue CLI — 터미널에서 Android 기기를 제어하세요')
+  .description('AgentBlue CLI — control your Android device from the terminal')
   .version('2.0.0');
 
 program
   .command('init')
-  .description('AgentBlue 초기 설정 (최초 1회 실행)')
+  .description('First-time setup (Firebase backend + language)')
   .action(initCommand);
 
 program
   .command('start')
-  .description('Android 기기와 대화형 세션 시작')
-  .option('-s, --session <code>', '기존 세션 코드로 재연결')
+  .description('Start an interactive session with your Android device')
+  .option('-s, --session <code>', 'Resume using an existing session code')
   .action(startCommand);
 
 program
   .command('send <command>')
-  .description('Android 기기에 단일 명령 전송 (비대화형)')
+  .description('Send a single command to your Android device (non-interactive)')
   .action(sendCommand);
 
 program
   .command('attach <integration>')
-  .description('메시징 통합 설정 (telegram | discord)')
+  .description('Configure a messaging integration: telegram | discord')
   .action(attachCommand);
+
+program
+  .command('setting')
+  .description('Change agent behavior settings on your paired Android device')
+  .action(settingCommand);
+
+program
+  .command('model')
+  .description('Change AI model settings on your paired Android device')
+  .action(modelCommand);
 
 program.parse();

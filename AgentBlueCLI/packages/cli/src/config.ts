@@ -24,6 +24,7 @@ export interface DiscordConfig {
 
 export interface AgentBlueConfig {
   firebase: FirebaseConfig;
+  language?: 'en' | 'ko';
   sessionId?: string;
   sessionCode?: string;
   telegram?: TelegramConfig;

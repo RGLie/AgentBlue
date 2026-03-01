@@ -2,6 +2,7 @@ import {
   collection,
   addDoc,
   doc,
+  setDoc,
   onSnapshot,
   serverTimestamp,
   type Unsubscribe,
@@ -56,6 +57,33 @@ export function listenAgentState(
       }
     },
   );
+}
+
+export async function requestCancel(sessionId: string): Promise<void> {
+  const db = getDb();
+  await setDoc(doc(db, 'sessions', sessionId, 'control', 'current'), {
+    action: 'cancel',
+    requestedAt: serverTimestamp(),
+  });
+}
+
+export async function writeSettings(sessionId: string, settings: Record<string, unknown>): Promise<void> {
+  const db = getDb();
+  await setDoc(
+    doc(db, 'sessions', sessionId, 'settings', 'current'),
+    { ...settings, updatedAt: serverTimestamp() },
+    { merge: true },
+  );
+}
+
+export function listenSettings(
+  sessionId: string,
+  onUpdate: (settings: Record<string, unknown>) => void,
+): Unsubscribe {
+  const db = getDb();
+  return onSnapshot(doc(db, 'sessions', sessionId, 'settings', 'current'), (snap) => {
+    if (snap.exists()) onUpdate(snap.data() as Record<string, unknown>);
+  });
 }
 
 export function listenCommandResult(

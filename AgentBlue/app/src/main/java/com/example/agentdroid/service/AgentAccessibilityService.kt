@@ -37,6 +37,7 @@ class AgentAccessibilityService : AccessibilityService() {
     private var floatingWindowManager: FloatingWindowManager? = null
     private var floatingPanelManager: FloatingPanelManager? = null
     private var firebaseCommandListener: FirebaseCommandListener? = null
+    private var firebaseSettingsListener: FirebaseSettingsListener? = null
     private var currentJob: Job? = null
 
     override fun onServiceConnected() {
@@ -56,9 +57,13 @@ class AgentAccessibilityService : AccessibilityService() {
         }
         floatingWindowManager?.show()
 
-        firebaseCommandListener = FirebaseCommandListener(this)
+        firebaseCommandListener = FirebaseCommandListener(this, AgentStateManager)
         firebaseCommandListener?.startListening()
-        Log.d(TAG, "Firebase Command Listener 시작")
+
+        firebaseSettingsListener = FirebaseSettingsListener()
+        firebaseSettingsListener?.startListening()
+
+        Log.d(TAG, "Firebase listeners started")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -200,8 +205,9 @@ class AgentAccessibilityService : AccessibilityService() {
     }
 
     fun restartCommandListener() {
-        Log.d(TAG, "FirebaseCommandListener 재시작 (세션 변경)")
+        Log.d(TAG, "Restarting Firebase listeners (session changed)")
         firebaseCommandListener?.restartListening()
+        firebaseSettingsListener?.restartListening()
     }
 
     override fun onDestroy() {
@@ -213,6 +219,9 @@ class AgentAccessibilityService : AccessibilityService() {
 
         firebaseCommandListener?.stopListening()
         firebaseCommandListener = null
+
+        firebaseSettingsListener?.stopListening()
+        firebaseSettingsListener = null
 
         floatingWindowManager?.remove()
         floatingWindowManager = null

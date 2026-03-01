@@ -22,6 +22,18 @@ service cloud.firestore {
           && (get(/databases/$(database)/documents/sessions/$(sessionId)).data.desktopUid == request.auth.uid
               || get(/databases/$(database)/documents/sessions/$(sessionId)).data.androidUid == request.auth.uid);
       }
+
+      match /control/{doc} {
+        allow read, write: if request.auth != null
+          && (get(/databases/$(database)/documents/sessions/$(sessionId)).data.desktopUid == request.auth.uid
+              || get(/databases/$(database)/documents/sessions/$(sessionId)).data.androidUid == request.auth.uid);
+      }
+
+      match /settings/{doc} {
+        allow read, write: if request.auth != null
+          && (get(/databases/$(database)/documents/sessions/$(sessionId)).data.desktopUid == request.auth.uid
+              || get(/databases/$(database)/documents/sessions/$(sessionId)).data.androidUid == request.auth.uid);
+      }
     }
 
     match /commands/{commandId} {

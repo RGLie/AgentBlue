@@ -1,5 +1,6 @@
 import chalk, { type ChalkInstance } from 'chalk';
 import type { AgentState, StepLog } from '../firebase/command.js';
+import { t } from '../i18n.js';
 
 const ACTION_ICON: Record<string, string> = {
   CLICK: '👆',
@@ -39,8 +40,8 @@ export function renderAgentState(state: AgentState, prevStepCount: number): {
   const color = statusColor(state.status);
 
   if (state.status === 'RUNNING') {
-    const progress = `Step ${state.currentStep}/${state.maxSteps}`;
-    lines.push(chalk.blue(`⠸ Processing... ${chalk.dim(progress)}`));
+    const progress = `${t('status_step')} ${state.currentStep}/${state.maxSteps}`;
+    lines.push(chalk.blue(`${t('status_processing')} ${chalk.dim(progress)}`));
 
     if (state.currentReasoning) {
       const truncated = state.currentReasoning.length > 80
@@ -54,11 +55,11 @@ export function renderAgentState(state: AgentState, prevStepCount: number): {
       lines.push(renderStepLog(step));
     }
   } else if (state.status === 'COMPLETED') {
-    lines.push(color.bold('✓ 완료!'));
+    lines.push(color.bold(t('status_done')));
   } else if (state.status === 'FAILED') {
-    lines.push(color.bold('✗ 실패'));
+    lines.push(color.bold(t('status_failed')));
   } else if (state.status === 'CANCELLED') {
-    lines.push(color.bold('⊘ 취소됨'));
+    lines.push(color.bold(t('status_cancelled')));
   }
 
   return { lines, newStepCount: state.liveSteps.length };
@@ -71,11 +72,11 @@ export function printDivider(): void {
 export function printHeader(code: string, connected: boolean): void {
   console.log(chalk.blue.bold('\nAgentBlue v2.0.0'));
   printDivider();
-  console.log(`Session Code: ${chalk.yellow.bold(code)}`);
+  console.log(`${t('session_label')} ${chalk.yellow.bold(code)}`);
   if (connected) {
-    console.log(`Status: ${chalk.green('● Connected')}`);
+    console.log(`Status: ${chalk.green(t('session_status_connected'))}`);
   } else {
-    console.log(`Status: ${chalk.gray('○ Waiting for device...')}`);
+    console.log(`Status: ${chalk.gray(t('session_status_waiting'))}`);
   }
   printDivider();
   console.log();

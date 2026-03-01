@@ -37,7 +37,7 @@ class FloatingWindowManager(
         try {
             windowManager?.addView(floatingView, layoutParams)
         } catch (e: Exception) {
-            Log.e(TAG, "플로팅 뷰 추가 실패: ${e.message}")
+            Log.e(TAG, "Failed to add floating view: ${e.message}")
         }
     }
 
@@ -65,24 +65,23 @@ class FloatingWindowManager(
 
     private fun showCommandDialog() {
         val editText = EditText(context).apply {
-            hint = "명령을 입력하세요"
+            hint = "Enter a command"
         }
 
         val dialog = android.app.AlertDialog.Builder(
             context,
             android.R.style.Theme_DeviceDefault_Light_Dialog_Alert
         )
-            .setTitle("AgentDroid Command")
+            .setTitle("AgentBlue Command")
             .setView(editText)
-            .setPositiveButton("실행") { _, _ ->
+            .setPositiveButton("Run") { _, _ ->
                 val command = editText.text.toString()
-                Log.d(TAG, "명령 입력: $command")
+                Log.d(TAG, "Command entered: $command")
                 onCommandEntered(command)
             }
-            .setNegativeButton("취소", null)
-            .setNeutralButton("설정") { _, _ ->
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Settings") { _, _ ->
                 val intent = Intent(context, MainActivity::class.java).apply {
-                    // This flag is required to start an activity from a service context
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(intent)

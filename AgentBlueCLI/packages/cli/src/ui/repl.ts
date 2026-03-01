@@ -1,9 +1,20 @@
 import readline from 'readline';
 import chalk from 'chalk';
-import { sendCommand, listenAgentState, listenCommandResult, type AgentState } from '../firebase/command.js';
+import {
+  sendCommand,
+  listenAgentState,
+  listenCommandResult,
+  requestCancel,
+  type AgentState,
+} from '../firebase/command.js';
 import { renderAgentState } from './status.js';
+import { t } from '../i18n.js';
+import { settingCommand } from '../commands/setting.js';
+import { modelCommand } from '../commands/model.js';
 
 const PROMPT = chalk.blue('> ');
+
+const SLASH_COMMANDS = ['/stop', '/setting', '/model', '/help'];
 
 export async function startRepl(sessionId: string): Promise<void> {
   const rl = readline.createInterface({
@@ -13,7 +24,8 @@ export async function startRepl(sessionId: string): Promise<void> {
     terminal: true,
   });
 
-  console.log(chalk.dim("명령을 입력하세요. 종료하려면 'exit' 또는 Ctrl+C\n"));
+  console.log(chalk.dim(t('repl_hint')));
+  console.log(chalk.dim(t('repl_slash_help')));
   rl.prompt();
 
   rl.on('line', async (line) => {
@@ -25,25 +37,36 @@ export async function startRepl(sessionId: string): Promise<void> {
     }
 
     if (input === 'exit' || input === 'quit') {
-      console.log(chalk.dim('\n연결을 종료합니다.'));
+      console.log(chalk.dim(t('repl_exit')));
       rl.close();
       process.exit(0);
     }
 
-    rl.pause();
+    // Slash commands
+    if (input.startsWith('/')) {
+      rl.pause();
+      try {
+        await handleSlashCommand(input, sessionId);
+      } catch (err) {
+        console.error(chalk.red(`Error: ${err}`));
+      }
+      rl.resume();
+      rl.prompt();
+      return;
+    }
 
+    rl.pause();
     try {
       await executeCommandInteractive(sessionId, input);
     } catch (err) {
-      console.error(chalk.red(`오류: ${err}`));
+      console.error(chalk.red(`Error: ${err}`));
     }
-
     rl.resume();
     rl.prompt();
   });
 
   rl.on('SIGINT', () => {
-    console.log(chalk.dim('\n\n연결을 종료합니다.'));
+    console.log(chalk.dim(t('repl_exit')));
     process.exit(0);
   });
 
@@ -52,8 +75,35 @@ export async function startRepl(sessionId: string): Promise<void> {
   });
 
   await new Promise<void>(() => {
-    // rl이 닫힐 때까지 대기
+    // keep alive until rl closes
   });
+}
+
+async function handleSlashCommand(input: string, sessionId: string): Promise<void> {
+  console.log();
+  switch (input) {
+    case '/stop':
+      await requestCancel(sessionId);
+      console.log(chalk.yellow(t('stop_requested')));
+      break;
+
+    case '/setting':
+      await settingCommand(sessionId);
+      break;
+
+    case '/model':
+      await modelCommand(sessionId);
+      break;
+
+    case '/help':
+      console.log(chalk.dim(t('repl_slash_help')));
+      break;
+
+    default:
+      console.log(chalk.red(`Unknown slash command: ${input}`));
+      console.log(chalk.dim(`Available: ${SLASH_COMMANDS.join('  ')}`));
+  }
+  console.log();
 }
 
 async function executeCommandInteractive(sessionId: string, command: string): Promise<void> {
@@ -83,22 +133,18 @@ async function executeCommandInteractive(sessionId: string, command: string): Pr
       unsubState();
       unsubResult();
 
-      if (status === 'completed') {
-        console.log(chalk.green.bold('\n✓ 완료!') + (result ? ` ${chalk.dim(result)}` : ''));
-      } else {
-        console.log(chalk.red.bold('\n✗ 실패') + (result ? ` ${chalk.dim(result)}` : ''));
-      }
+      const msg = status === 'completed' ? t('cmd_completed') : t('cmd_failed');
+      console.log(chalk.bold(msg) + (result ? ` ${chalk.dim(result)}` : ''));
       console.log();
       resolve();
     });
 
-    // 타임아웃 — 5분 후 강제 종료
     setTimeout(() => {
       if (!resolved) {
         resolved = true;
         unsubState();
         unsubResult();
-        console.log(chalk.yellow('\n⏱ 타임아웃: 응답 없음 (5분)'));
+        console.log(chalk.yellow(t('cmd_timeout')));
         resolve();
       }
     }, 5 * 60 * 1000);
