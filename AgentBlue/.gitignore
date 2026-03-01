@@ -1,6 +1,8 @@
 *.iml
 .gradle
 /local.properties
+# Firebase config — 오픈소스 배포 시 포함하지 않음. app/google-services.json.placeholder 참고
+google-services.json
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml

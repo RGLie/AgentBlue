@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "AgentBlueCLI/packages/cli" },
+    { "path": "AgentBlueCLI/packages/telegram" },
+    { "path": "AgentBlueCLI/packages/discord" }
+  ]
+}

@@ -1,4 +1,4 @@
-# AgentBlue - AI-Powered Android Automation Agent
+# AgentBlue — AI-Powered Android Automation Agent
 
 An AI agent app that leverages Android's Accessibility Service to analyze on-screen UI and autonomously perform actions (tap, type, scroll, navigate) based on LLM reasoning — all from a single natural-language command.
 
@@ -6,7 +6,10 @@ An AI agent app that leverages Android's Accessibility Service to analyze on-scr
 
 - **ReAct Loop Automation** — Reasoning + Acting loop that breaks down natural-language commands into step-by-step screen actions
 - **Multi-Provider LLM Support** — OpenAI, Google Gemini, Anthropic Claude, and DeepSeek
-- **Desktop Remote Control** — Pair with [AgentBlueDesktop](https://agentblue-d83e5.web.app) to send commands from your PC
+- **CLI Remote Control** — Pair with [AgentBlueCLI](../AgentBlueCLI) (recommended) to send commands from your terminal, Telegram, or Discord
+- **Remote Settings** — Configure agent and AI model via `agentblue setting` and `agentblue model` from the CLI
+- **Remote Cancel** — Stop running tasks with `/stop` from the CLI REPL
+- **Desktop/Web** — Also compatible with [AgentBlueDesktop](https://agentblue-d83e5.web.app) (legacy)
 - **Real-Time State Sync** — Live execution status shared via Firebase Firestore
 - **Floating UI** — Overlay button lets you issue commands on top of any app
 - **Stuck Detection & Recovery** — Automatically recovers when the agent gets stuck
@@ -99,9 +102,10 @@ app/src/main/java/com/example/agentdroid/
 │   ├── ScreenAnalyzer.kt        # Screen analysis + LLM prompt generation
 │   ├── UiTreeParser.kt          # UI tree parsing (JSON serialization)
 │   ├── ActionExecutor.kt        # Action execution (click, type, scroll, etc.)
-│   ├── FirebaseCommandListener.kt  # Firebase remote command listener
-│   ├── FloatingWindowManager.kt # Floating button manager
-│   └── FloatingPanelManager.kt  # Execution status overlay panel
+│   ├── FirebaseCommandListener.kt   # Remote commands + cancel listener
+│   ├── FirebaseSettingsListener.kt # Remote settings sync (agent + model)
+│   ├── FloatingWindowManager.kt     # Floating button manager
+│   └── FloatingPanelManager.kt      # Execution status overlay panel
 └── legal/
     ├── LegalTexts.kt            # Legal document text
     └── LegalScreens.kt          # Legal document screens
@@ -136,14 +140,14 @@ app/src/main/java/com/example/agentdroid/
 | `HOME` | Go to the home screen |
 | `DONE` | Task completed |
 
-## Connection with AgentBlueDesktop
+## Connection with AgentBlueCLI (or AgentBlueDesktop)
 
-The two projects communicate in real time through **Firebase Firestore**, sharing the same Firebase project (`agentblue-d83e5`).
+The app communicates in real time through **Firebase Firestore**, sharing the same Firebase project (`agentblue-d83e5`). Use [AgentBlueCLI](../AgentBlueCLI) for terminal, Telegram, and Discord control — or [AgentBlueDesktop](https://agentblue-d83e5.web.app) for legacy desktop/web.
 
 ### Session Pairing
 
 ```
-AgentBlueDesktop                    Firebase                      AgentBlue (Android)
+AgentBlueCLI / AgentBlueDesktop      Firebase                      AgentBlue (Android)
       │                               │                               │
       │  1. createSession()           │                               │
       │  ─────────────────────────►   │                               │
@@ -166,7 +170,7 @@ AgentBlueDesktop                    Firebase                      AgentBlue (And
 ### Command Execution Flow
 
 ```
-AgentBlueDesktop                    Firebase                      AgentBlue (Android)
+AgentBlueCLI / AgentBlueDesktop      Firebase                      AgentBlue (Android)
       │                               │                               │
       │  sendCommand()                │                               │
       │  status: "pending"            │                               │
@@ -194,7 +198,7 @@ AgentBlueDesktop                    Firebase                      AgentBlue (And
 ```
 sessions/{sessionId}
 ├── code: String                    # 8-digit pairing code
-├── desktopUid: String              # Desktop user UID
+├── desktopUid: String              # CLI/Desktop user UID
 ├── androidUid: String              # Android user UID
 ├── status: String                  # "waiting" | "paired" | "disconnected"
 ├── createdAt: Timestamp
@@ -206,13 +210,22 @@ sessions/{sessionId}
 │   ├── createdAt: Timestamp
 │   └── updatedAt: Timestamp
 │
-└── agentState/current              # Agent state document
-    ├── status: String              # "IDLE" | "RUNNING" | "COMPLETED" | "FAILED"
-    ├── currentCommand: String
-    ├── currentStep: int
-    ├── maxSteps: int
-    ├── currentReasoning: String
-    └── liveSteps: Array<Map>
+├── agentState/current              # Agent state document
+│   ├── status: String              # "IDLE" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED"
+│   ├── currentCommand: String
+│   ├── currentStep: int
+│   ├── maxSteps: int
+│   ├── currentReasoning: String
+│   └── liveSteps: Array<Map>
+│
+├── control/current                 # Remote cancel (CLI /stop)
+│   ├── action: String              # "cancel" | "idle"
+│   └── requestedAt: Timestamp
+│
+└── settings/current                # Remote config (CLI /setting, /model)
+    ├── maxSteps, stepDelayMs, defaultBrowser, language
+    ├── provider, model, apiKey
+    └── updatedAt
 ```
 
 ## Required Permissions
@@ -241,10 +254,10 @@ sessions/{sessionId}
 ### Initial Setup
 
 1. Install the app and accept the Privacy Policy & Terms of Service
-2. Configure AI model settings — select provider, model, and enter API key
-3. Enable the Accessibility Service (Settings → Accessibility → AgentDroid)
+2. Configure AI model settings — select provider, model, and enter API key (or use `agentblue model` after pairing)
+3. Enable the Accessibility Service (Settings → Accessibility → AgentBlue)
 4. Grant overlay permission
-5. (Optional) Create a session code in AgentBlueDesktop to enable remote control
+5. (Optional) Run `agentblue start` in AgentBlueCLI and enter the session code in the app for remote control
 
 ## License
 
