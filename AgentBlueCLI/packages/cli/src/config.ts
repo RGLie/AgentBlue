@@ -11,24 +11,11 @@ export interface FirebaseConfig {
   appId: string;
 }
 
-export interface TelegramConfig {
-  botToken: string;
-  allowedChatIds?: number[];
-}
-
-export interface DiscordConfig {
-  botToken: string;
-  channelId: string;
-  guildId: string;
-}
-
 export interface AgentBlueConfig {
   firebase: FirebaseConfig;
   language?: 'en' | 'ko';
   sessionId?: string;
   sessionCode?: string;
-  telegram?: TelegramConfig;
-  discord?: DiscordConfig;
 }
 
 // 공유 Firebase 프로젝트 기본값 (agentblue-d83e5)

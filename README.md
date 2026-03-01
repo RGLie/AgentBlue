@@ -1,12 +1,12 @@
 # AgentBlue
 
-An open-source AI-powered Android automation system. Give it a natural-language command from your terminal, Telegram, or Discord — and it autonomously navigates your Android device, tapping, typing, and scrolling using a step-by-step ReAct loop backed by your choice of LLM.
+An open-source AI-powered Android automation system. Give it a natural-language command from your terminal — and it autonomously navigates your Android device, tapping, typing, and scrolling using a step-by-step ReAct loop backed by your choice of LLM.
 
 ## Projects
 
 | Project | Stack | Description |
 |---------|-------|-------------|
-| [**AgentBlueCLI**](./AgentBlueCLI) ✨ | Node.js · TypeScript · Firebase | **Primary control interface** — terminal REPL, `/stop`, `/setting`, `/model`, Telegram, Discord |
+| [**AgentBlueCLI**](./AgentBlueCLI) ✨ | Node.js · TypeScript · Firebase | **Primary control interface** — terminal REPL, `/stop`, `/setting`, `/model` |
 | [**AgentBlue**](./AgentBlue) | Kotlin · Jetpack Compose · Room · Firebase | Android agent app — reads the screen via Accessibility Service and executes actions |
 | [**AgentBlueDesktop**](./AgentBlueDesktop) | Flutter · Firebase | Legacy desktop commander (superseded by AgentBlueCLI) |
 
@@ -15,7 +15,7 @@ An open-source AI-powered Android automation system. Give it a natural-language 
 ## How It Works
 
 ```
-AgentBlueCLI / Telegram / Discord
+AgentBlueCLI
           │
           │  "Search YouTube for lo-fi music"
           ▼
@@ -44,7 +44,7 @@ Tap the floating robot button that appears on top of any app and type a command 
 
 ## Quick Start
 
-### AgentBlueCLI (Terminal / Telegram / Discord)
+### AgentBlueCLI (Terminal)
 
 ```bash
 npm install -g @agentblue/cli
@@ -69,8 +69,6 @@ agentblue start     # pair with your Android device and start a REPL
 agentblue setting   # configure agent settings remotely
 agentblue model     # configure AI model remotely
 agentblue send "open YouTube"   # send a single command without REPL
-agentblue attach telegram       # add Telegram integration
-agentblue attach discord        # add Discord integration
 ```
 
 See [AgentBlueCLI →](./AgentBlueCLI) for full documentation.
@@ -153,7 +151,7 @@ sessions/{sessionId}
 |-|--------------|---------------------|
 | Language | TypeScript | Kotlin |
 | Runtime | Node.js 18+ | Android 8.0+ (API 26) |
-| UI | Terminal REPL / Telegram / Discord | Jetpack Compose + Material 3 |
+| UI | Terminal REPL | Jetpack Compose + Material 3 |
 | Backend | Firebase Firestore + Auth | Firebase Firestore + Auth |
 | Networking | firebase JS SDK | Retrofit 3 + OkHttp |
 | Local storage | `~/.agentblue/config.json` | Room DB |

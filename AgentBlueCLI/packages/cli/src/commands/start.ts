@@ -6,11 +6,9 @@ import {
   listenSessionStatus,
   disconnectSession,
 } from '../firebase/session.js';
-import { updateConfig, getConfig } from '../config.js';
+import { updateConfig } from '../config.js';
 import { printHeader } from '../ui/status.js';
 import { startRepl } from '../ui/repl.js';
-import { startTelegramIntegration } from '../integrations/telegram.js';
-import { startDiscordIntegration } from '../integrations/discord.js';
 import { t } from '../i18n.js';
 
 interface StartOptions {
@@ -66,26 +64,6 @@ export async function startCommand(options: StartOptions): Promise<void> {
   });
 
   printHeader(code, true);
-
-  const config = getConfig();
-
-  if (config.telegram?.botToken) {
-    try {
-      await startTelegramIntegration(sessionId, config.telegram);
-      console.log(chalk.dim(t('integration_tg_started')));
-    } catch {
-      console.log(chalk.yellow(t('integration_tg_failed')));
-    }
-  }
-
-  if (config.discord?.botToken) {
-    try {
-      await startDiscordIntegration(sessionId, config.discord);
-      console.log(chalk.dim(t('integration_dc_started')));
-    } catch {
-      console.log(chalk.yellow(t('integration_dc_failed')));
-    }
-  }
 
   process.on('SIGINT', async () => {
     console.log(chalk.dim(`\n\n${t('repl_exit')}`));

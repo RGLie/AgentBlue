@@ -11,7 +11,7 @@ AgentBlue is an **AI-powered Android automation agent system** consisting of thr
 
 | Project | Tech Stack | Role |
 |----------|-----------|------|
-| **AgentBlueCLI** (Primary) | Node.js, TypeScript, Firebase JS SDK | Terminal REPL, remote control (/stop, /setting, /model), Telegram/Discord integration |
+| **AgentBlueCLI** (Primary) | Node.js, TypeScript, Firebase JS SDK | Terminal REPL, remote control (/stop, /setting, /model) |
 | **AgentBlue** (Android) | Kotlin, Jetpack Compose, Room, Firebase, Retrofit | Analyzes UI via Accessibility Service on Android and performs automated operations based on LLM reasoning |
 | **AgentBlueDesktop** (Legacy) | Flutter (Dart), Firebase | Legacy desktop commander (replaced by AgentBlueCLI) |
 
@@ -31,7 +31,7 @@ The three projects share the same Firebase project (`agentblue-d83e5`) and use *
 │  · /stop  → control/current {action:"cancel"}   │
 │  · /setting → settings/current (agent config)   │
 │  · /model  → settings/current (model config)    │
-│  · Telegram / Discord integration               │
+│                                                  │
 └────────────────────┬────────────────────────────┘
                      │ Firebase JS SDK
                      ▼
@@ -163,14 +163,13 @@ AgentBlueCLI/
 │   │   ├── package.json
 │   │   ├── tsconfig.json          # composite: true, include: src/**/*.ts
 │   │   └── src/
-│   │       ├── index.ts           # Commander entry point (6 commands)
+│   │       ├── index.ts           # Commander entry point (5 commands)
 │   │       ├── config.ts          # Config management (~/.agentblue/config.json)
 │   │       ├── i18n.ts            # English/Korean Internationalization
 │   │       ├── commands/
 │   │       │   ├── init.ts        # Firebase setup + Language selection
 │   │       │   ├── start.ts       # Session start + REPL entry
 │   │       │   ├── send.ts        # Single command send (non-interactive)
-│   │       │   ├── attach.ts      # Telegram/Discord integration setup
 │   │       │   ├── setting.ts     # Remote agent settings (NEW)
 │   │       │   └── model.ts       # Remote AI model settings (NEW)
 │   │       ├── firebase/
@@ -180,21 +179,8 @@ AgentBlueCLI/
 │   │       ├── ui/
 │   │       │   ├── repl.ts        # Terminal REPL + Slash commands (UPDATED)
 │   │       │   └── status.ts      # Agent state rendering
-│   │       └── integrations/
-│   │           ├── telegram.ts    # Telegram bot integration
-│   │           └── discord.ts     # Discord bot integration
-│   ├── telegram/                  # @agentblue/telegram
-│   │   └── src/
-│   │       ├── index.ts           # Telegram bot daemon
-│   │       └── handler.ts         # Message/Command handler
-│   └── discord/                  # @agentblue/discord
-│       └── src/
-│           ├── index.ts           # Discord bot daemon
-│           └── handler.ts         # Slash command handler
 └── docs/
-    ├── getting-started.md
-    ├── telegram-setup.md
-    └── discord-setup.md
+    └── getting-started.md
 ```
 
 ### 3.2 Major Dependencies
@@ -206,8 +192,6 @@ AgentBlueCLI/
 | firebase | ^11.x | Firebase JS SDK |
 | chalk | ^5.x | Terminal color output |
 | ora | ^8.x | Spinner animation |
-| node-telegram-bot-api | ^0.66.x | Telegram bot API |
-| discord.js | ^14.x | Discord bot API |
 
 ### 3.3 CLI Command List
 
@@ -216,7 +200,6 @@ AgentBlueCLI/
 | `agentblue init` | Initial setup (Firebase backend + language selection) |
 | `agentblue start` | Start session + Wait for pairing + REPL |
 | `agentblue send <command>` | Send a single command (non-interactive) |
-| `agentblue attach telegram\|discord` | Configure messenger integration |
 | `agentblue setting` | Remotely change Android agent settings |
 | `agentblue model` | Remotely change Android AI model settings |
 
