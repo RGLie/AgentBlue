@@ -1,0 +1,16 @@
+{
+  "name": "agentblue-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev:cli": "npm run dev -w @agentblue/cli",
+    "dev:telegram": "npm run dev -w @agentblue/telegram",
+    "dev:discord": "npm run dev -w @agentblue/discord"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

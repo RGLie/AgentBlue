@@ -1,9 +1,28 @@
 {
-  "NOTE": "이 파일은 placeholder입니다.",
-  "INSTRUCTIONS": [
-    "1. Firebase Console (https://console.firebase.google.com)에서 프로젝트를 생성하세요.",
-    "2. Android 앱을 등록하세요 (패키지명: com.example.agentdroid).",
-    "3. google-services.json 파일을 다운로드하세요.",
-    "4. 이 placeholder 파일을 삭제하고, 다운로드한 google-services.json을 app/ 폴더에 넣으세요."
-  ]
+  "NOTE": "이 파일은 설정 템플릿입니다. 실제 google-services.json으로 교체하세요.",
+  "SETUP_OPTIONS": {
+    "OPTION_A_SHARED": {
+      "DESCRIPTION": "공유 Firebase 서버 사용 (기본, 빠른 시작)",
+      "STEPS": [
+        "1. AgentBlueCLI 설치 후 `agentblue init` 실행",
+        "2. '기본 공유 서버 사용' 선택",
+        "3. Firebase Console에서 agentblue-d83e5 프로젝트의",
+        "   Android 앱 설정에서 google-services.json 다운로드",
+        "4. 이 파일을 삭제하고 app/google-services.json으로 교체"
+      ]
+    },
+    "OPTION_B_SELF_HOSTED": {
+      "DESCRIPTION": "내 Firebase 프로젝트 사용 (완전한 셀프호스팅)",
+      "STEPS": [
+        "1. Firebase Console (https://console.firebase.google.com) 에서 프로젝트 생성",
+        "2. Firestore Database 생성 (프로덕션 모드)",
+        "3. Authentication > 로그인 제공업체 > 익명 활성화",
+        "4. Android 앱 등록 (패키지명: com.example.agentdroid)",
+        "5. google-services.json 다운로드",
+        "6. 이 파일을 삭제하고 app/google-services.json으로 교체",
+        "7. Firestore 보안 규칙 적용 (AgentBlueCLI/docs/ 참고)",
+        "8. AgentBlueCLI에서도 동일한 Firebase 프로젝트 사용 (`agentblue init` 시 설정)"
+      ]
+    }
+  }
 }
