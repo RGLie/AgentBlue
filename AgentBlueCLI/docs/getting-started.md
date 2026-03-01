@@ -50,6 +50,4 @@ agentblue start
 
 ## 다음 단계
 
-- [Telegram 연동](./telegram-setup.md)
-- [Discord 연동](./discord-setup.md)
 - 자체 Firebase 사용: `agentblue init --custom-firebase`

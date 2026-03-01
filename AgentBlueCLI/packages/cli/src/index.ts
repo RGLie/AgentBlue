@@ -3,7 +3,6 @@ import { Command } from 'commander';
 import { initCommand } from './commands/init.js';
 import { startCommand } from './commands/start.js';
 import { sendCommand } from './commands/send.js';
-import { attachCommand } from './commands/attach.js';
 import { settingCommand } from './commands/setting.js';
 import { modelCommand } from './commands/model.js';
 
@@ -29,11 +28,6 @@ program
   .command('send <command>')
   .description('Send a single command to your Android device (non-interactive)')
   .action(sendCommand);
-
-program
-  .command('attach <integration>')
-  .description('Configure a messaging integration: telegram | discord')
-  .action(attachCommand);
 
 program
   .command('setting')

@@ -56,49 +56,6 @@ const translations = {
     cmd_not_paired_hint: "Run 'agentblue start' to create a new session.",
     cmd_session_label: 'Session:',
 
-    // attach — telegram
-    attach_tg_title: 'Telegram Bot Setup',
-    attach_tg_step1: '1. Find @BotFather on Telegram and run /newbot to create a bot.',
-    attach_tg_step2: '2. Paste the token BotFather gives you below.',
-    attach_tg_token: 'Bot Token (e.g. 7123456789:AAFxx...):',
-    attach_tg_token_invalid: 'Invalid token format.',
-    attach_tg_allowlist_prompt: 'Restrict to specific Chat IDs? (recommended for security)',
-    attach_tg_allowlist_hint: '\nSend a message to your bot, then open https://api.telegram.org/bot{TOKEN}/getUpdates to find your chat.id.',
-    attach_tg_allowlist_input: 'Allowed Chat IDs (comma-separated, e.g. 123456789,987654321):',
-    attach_tg_saved: '\n✓ Telegram bot configured.',
-    attach_tg_next: "'agentblue start' will launch the bot automatically.",
-    attach_tg_commands_title: '\nAvailable commands in bot:',
-    attach_tg_cmd_run: '  /run <task>   — send task to Android device',
-    attach_tg_cmd_status: '  /status       — check current status',
-    attach_tg_cmd_stop: '  /stop         — request task cancellation',
-    attach_tg_cmd_session: '  /session      — show session info',
-
-    // attach — discord
-    attach_dc_title: 'Discord Bot Setup',
-    attach_dc_step1: '1. Go to https://discord.com/developers/applications and create an app.',
-    attach_dc_step2: '2. Under Bot, copy the token.',
-    attach_dc_step3: '3. Under OAuth2, invite the bot with bot + applications.commands scopes.',
-    attach_dc_token: 'Bot Token:',
-    attach_dc_token_invalid: 'Invalid token.',
-    attach_dc_guild: 'Server (Guild) ID: (right-click server → Copy ID with Developer Mode on)',
-    attach_dc_channel: 'Channel ID: (right-click channel → Copy ID)',
-    attach_dc_id_invalid: 'Numbers only.',
-    attach_dc_saved: '\n✓ Discord bot configured.',
-    attach_dc_next: "'agentblue start' will launch the bot automatically.",
-    attach_dc_commands_title: '\nAvailable slash commands:',
-    attach_dc_cmd_run: '  /run <task>   — send task to Android device',
-    attach_dc_cmd_status: '  /status       — check current status',
-
-    // attach — unknown
-    attach_unknown: 'Unknown integration:',
-    attach_available: 'Available integrations: telegram, discord',
-
-    // integrations start
-    integration_tg_started: '✓ Telegram bot connected',
-    integration_tg_failed: '⚠ Telegram bot failed to start (check your config)',
-    integration_dc_started: '✓ Discord bot connected',
-    integration_dc_failed: '⚠ Discord bot failed to start (check your config)',
-
     // stop
     stop_requested: 'Cancel requested. Waiting for device to stop...',
     stop_no_session: 'No active session to cancel.',
@@ -184,49 +141,6 @@ const translations = {
     cmd_not_paired: '오류: 기기가 연결되어 있지 않습니다.',
     cmd_not_paired_hint: "'agentblue start'로 새 세션을 시작하세요.",
     cmd_session_label: '세션:',
-
-    // attach — telegram
-    attach_tg_title: 'Telegram 봇 설정',
-    attach_tg_step1: '1. Telegram에서 @BotFather를 찾아 /newbot 명령으로 봇을 생성하세요.',
-    attach_tg_step2: '2. BotFather가 제공한 토큰을 아래에 입력하세요.',
-    attach_tg_token: 'Bot Token (예: 7123456789:AAFxx...):',
-    attach_tg_token_invalid: '유효하지 않은 토큰 형식입니다.',
-    attach_tg_allowlist_prompt: '특정 채팅 ID만 허용하시겠습니까? (보안 강화)',
-    attach_tg_allowlist_hint: '\n봇에게 메시지를 보낸 후 https://api.telegram.org/bot{TOKEN}/getUpdates 에서 chat.id를 확인하세요.',
-    attach_tg_allowlist_input: '허용할 Chat ID (쉼표로 구분, 예: 123456789,987654321):',
-    attach_tg_saved: '\n✓ Telegram 봇 설정이 저장되었습니다.',
-    attach_tg_next: "'agentblue start' 실행 시 Telegram 봇이 자동으로 시작됩니다.",
-    attach_tg_commands_title: '\n봇에서 사용 가능한 명령어:',
-    attach_tg_cmd_run: '  /run <명령>   — Android 기기에 명령 전송',
-    attach_tg_cmd_status: '  /status       — 현재 실행 상태 확인',
-    attach_tg_cmd_stop: '  /stop         — 실행 중인 작업 취소 요청',
-    attach_tg_cmd_session: '  /session      — 세션 정보 확인',
-
-    // attach — discord
-    attach_dc_title: 'Discord 봇 설정',
-    attach_dc_step1: '1. https://discord.com/developers/applications 에서 애플리케이션을 생성하세요.',
-    attach_dc_step2: '2. Bot 탭에서 토큰을 복사하세요.',
-    attach_dc_step3: '3. OAuth2 탭에서 bot + applications.commands 권한으로 서버에 초대하세요.',
-    attach_dc_token: 'Bot Token:',
-    attach_dc_token_invalid: '유효하지 않은 토큰입니다.',
-    attach_dc_guild: 'Server (Guild) ID: (개발자 모드 활성화 후 서버 우클릭 → ID 복사)',
-    attach_dc_channel: 'Channel ID: (채널 우클릭 → ID 복사)',
-    attach_dc_id_invalid: '숫자만 입력하세요.',
-    attach_dc_saved: '\n✓ Discord 봇 설정이 저장되었습니다.',
-    attach_dc_next: "'agentblue start' 실행 시 Discord 봇이 자동으로 시작됩니다.",
-    attach_dc_commands_title: '\n사용 가능한 슬래시 커맨드:',
-    attach_dc_cmd_run: '  /run <명령>   — Android 기기에 명령 전송',
-    attach_dc_cmd_status: '  /status       — 현재 실행 상태 확인',
-
-    // attach — unknown
-    attach_unknown: '알 수 없는 통합:',
-    attach_available: '사용 가능한 통합: telegram, discord',
-
-    // integrations start
-    integration_tg_started: '✓ Telegram 봇 연결됨',
-    integration_tg_failed: '⚠ Telegram 봇 시작 실패 (설정을 확인하세요)',
-    integration_dc_started: '✓ Discord 봇 연결됨',
-    integration_dc_failed: '⚠ Discord 봇 시작 실패 (설정을 확인하세요)',
 
     // stop
     stop_requested: '취소 요청을 전송했습니다. 기기가 멈출 때까지 기다려주세요...',
