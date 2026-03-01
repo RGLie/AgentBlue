@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Main Soft Lavender Shape -->
+    <path
+        android:fillColor="@color/pastel_lavender"
+        android:pathData="M54,30c-13.2,0 -24,10.8 -24,24s10.8,24 24,24s24,-10.8 24,-24S67.2,30 54,30z M54,70c-8.8,0 -16,-7.2 -16,-16s7.2,-16 16,-16s16,7.2 16,16S62.8,70 54,70z" />
+        
+    <!-- Pastel Accents (Floating soft circles) -->
+    <path
+        android:fillColor="@color/pastel_pink"
+        android:fillAlpha="0.8"
+        android:pathData="M38,44c0,-3.3 2.7,-6 6,-6s6,2.7 6,6s-2.7,6 -6,6S38,47.3 38,44z" />
+        
+    <path
+        android:fillColor="@color/pastel_mint"
+        android:fillAlpha="0.8"
+        android:pathData="M64,64c0,-3.3 2.7,-6 6,-6s6,2.7 6,6s-2.7,6 -6,6S64,67.3 64,64z" />
+        
+    <!-- Center Soft Node -->
+    <path
+        android:fillColor="@color/agent_purple_dark"
+        android:pathData="M54,54m-4,0a4,4 0 1,1 8,0a4,4 0 1,1 -8,0" />
+
+</vector>

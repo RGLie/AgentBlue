@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentDroid - 개인정보 처리방침</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+            line-height: 1.8;
+            color: #1a1a2e;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        header .app-name {
+            font-size: 15px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        header .date {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-top: 12px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            padding-left: 14px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        p {
+            margin-bottom: 12px;
+            color: #374151;
+            font-size: 15px;
+        }
+
+        .section {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .subsection {
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .subsection-title {
+            font-weight: 600;
+            color: #475569;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        ul li {
+            margin-bottom: 6px;
+            color: #4b5563;
+            font-size: 14.5px;
+        }
+
+        ol {
+            padding-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        ol li {
+            margin-bottom: 8px;
+            color: #4b5563;
+            font-size: 14.5px;
+        }
+
+        .highlight-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+        }
+
+        .contact-info {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 12px;
+        }
+
+        .contact-info p {
+            margin-bottom: 4px;
+            font-size: 14.5px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px 60px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="app-name">AgentDroid</div>
+            <h1>개인정보 처리방침</h1>
+            <div class="date">최종 수정일: 2026년 2월 26일 · 시행일: 2026년 2월 26일</div>
+        </header>
+
+        <p>AgentDroid(이하 "본 앱")는 「개인정보 보호법」 제30조에 따라 이용자의 개인정보를 보호하고, 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 다음과 같이 개인정보 처리방침을 수립·공개합니다.</p>
+
+        <div class="section">
+            <h2>제1조 (수집하는 개인정보 항목 및 수집 방법)</h2>
+
+            <p>1. 본 앱은 서비스 제공을 위해 다음과 같은 정보를 수집합니다.</p>
+
+            <div class="subsection">
+                <div class="subsection-title">[자동 수집 항목]</div>
+                <ul>
+                    <li>화면 UI 텍스트 정보 (접근성 서비스를 통해 수집되는 화면 요소의 텍스트, 힌트, 콘텐츠 설명)</li>
+                    <li>화면 UI 구조 정보 (뷰 ID, 패키지명, 클래스명, 요소 위치 및 상태)</li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <div class="subsection-title">[이용자 입력 항목]</div>
+                <ul>
+                    <li>AI API 키 (OpenAI, Google Gemini, Anthropic Claude, DeepSeek 등 사용자가 선택한 AI 서비스의 API 키)</li>
+                    <li>사용자 명령어 (에이전트에게 전달하는 자연어 명령)</li>
+                    <li>세션 코드 (Desktop 연동 시 입력하는 8자리 페어링 코드)</li>
+                </ul>
+            </div>
+
+            <div class="subsection">
+                <div class="subsection-title">[서비스 운영 정보]</div>
+                <ul>
+                    <li>Firebase 익명 인증 UID</li>
+                    <li>실행 기록 — 기기 내 저장 (Room 데이터베이스):
+                        <ul>
+                            <li>사용자 명령어, 실행 상태(완료/실패/취소), 결과 메시지</li>
+                            <li>전체 스텝 로그 (각 스텝의 액션 타입, 대상 텍스트, AI 추론 내용, 성공 여부)</li>
+                            <li>실행 시작 시간 및 종료 시간</li>
+                        </ul>
+                    </li>
+                    <li>실시간 실행 상태 — Firebase Firestore 동기화 (Desktop 연동 시):
+                        <ul>
+                            <li>현재 실행 중인 명령어, 진행 스텝, 최대 스텝 수</li>
+                            <li>각 스텝의 실시간 로그 (액션 타입, 대상 텍스트, AI 추론 내용, 성공 여부, 타임스탬프)</li>
+                            <li>에이전트 상태 (실행 중/완료/실패/취소/대기)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <p>2. 수집 방법</p>
+            <ul>
+                <li>Android 접근성(Accessibility) API를 통한 화면 정보 수집</li>
+                <li>앱 내 사용자 직접 입력</li>
+                <li>Firebase 익명 인증 자동 생성</li>
+                <li>에이전트 실행 중 자동 기록 (스텝 로그)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제2조 (개인정보의 수집 및 이용 목적)</h2>
+
+            <p>본 앱은 수집한 정보를 다음의 목적을 위해 이용합니다.</p>
+            <ol>
+                <li><strong>AI 기반 화면 분석 및 자동 조작:</strong> 접근성 서비스를 통해 수집한 화면 UI 정보를 AI 모델에 전송하여 사용자의 명령을 분석하고 적절한 동작(클릭, 입력, 스크롤 등)을 결정합니다.</li>
+                <li><strong>명령 실행 및 결과 관리:</strong> 사용자가 입력한 명령의 실행 과정과 결과를 기기 내 데이터베이스(Room)에 기록하여 이전 실행 내역을 확인할 수 있도록 합니다. 저장 항목에는 명령어, 실행 상태, 각 스텝의 액션 로그(대상 텍스트, AI 추론 내용 포함), 시작/종료 시간이 포함됩니다.</li>
+                <li><strong>Desktop 연동 및 실시간 상태 공유:</strong> 세션 코드를 통해 데스크탑 앱과 연동하여 원격으로 명령을 전달받습니다. 세션이 연결된 상태에서 에이전트 실행 시, 현재 진행 상태와 각 스텝의 실시간 로그(액션 타입, 대상 텍스트, AI 추론 내용, 성공 여부)가 Firebase Firestore를 통해 데스크탑으로 동기화됩니다.</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>제3조 (접근성 API 사용에 관한 고지)</h2>
+
+            <ol>
+                <li>본 앱은 Android 접근성 서비스 API를 사용합니다. 이를 통해 현재 화면에 표시된 UI 요소(텍스트, 버튼, 입력 필드 등)의 정보를 읽고, 사용자를 대신하여 화면 조작(클릭, 텍스트 입력, 스크롤, 뒤로 가기 등)을 수행합니다.</li>
+                <li>접근성 API를 통해 수집되는 데이터:
+                    <ul>
+                        <li>화면에 표시된 텍스트 및 힌트 텍스트</li>
+                        <li>UI 요소의 콘텐츠 설명(contentDescription)</li>
+                        <li>뷰 리소스 ID 및 클래스명</li>
+                        <li>앱 패키지명</li>
+                        <li>UI 요소의 위치(bounds) 및 상태(클릭 가능 여부, 편집 가능 여부)</li>
+                    </ul>
+                </li>
+                <li>접근성 API를 통해 수집된 데이터는 오직 AI 모델의 화면 분석 및 자동 조작 기능 수행을 위해서만 사용되며, 다른 목적으로 수집·저장·공유되지 않습니다.</li>
+                <li>접근성 API를 통해 수집된 화면 데이터는 기기에 영구 저장되지 않으며, AI 분석 요청 시 일시적으로 사용된 후 즉시 폐기됩니다.</li>
+                <li>본 앱은 접근성 API를 통해 수집한 데이터를 광고, 마케팅, 사용자 프로파일링, 또는 기타 접근성 기능과 무관한 목적으로 사용하지 않습니다.</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>제4조 (개인정보의 제3자 제공)</h2>
+
+            <p>1. 본 앱은 다음과 같은 경우에 사용자의 정보를 외부 서비스로 전송합니다.</p>
+
+            <div class="highlight-box">
+                <div class="subsection-title">[AI API 서비스 제공자]</div>
+                <ul>
+                    <li><strong>제공받는 자:</strong> 사용자가 선택한 AI 서비스 제공자 (OpenAI, Google, Anthropic, DeepSeek 중 택 1)</li>
+                    <li><strong>제공 항목:</strong> 현재 화면의 UI 트리 정보(텍스트, 구조), 사용자 명령어, 실행 기록 요약</li>
+                    <li><strong>제공 목적:</strong> AI 기반 화면 분석 및 다음 동작 결정</li>
+                    <li><strong>전송 방식:</strong> HTTPS 암호화 통신</li>
+                    <li><strong>보유 기간:</strong> 각 AI 서비스 제공자의 API 데이터 처리 정책에 따름</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box">
+                <div class="subsection-title">[Firebase (Google)]</div>
+                <ul>
+                    <li><strong>제공받는 자:</strong> Google LLC (Firebase 서비스)</li>
+                    <li><strong>제공 항목:</strong>
+                        <ul>
+                            <li>익명 인증 정보(UID)</li>
+                            <li>세션 페어링 데이터 (세션 코드, 연결 상태)</li>
+                            <li>원격 명령어 및 실행 결과 (명령어, 처리 상태, 결과 메시지)</li>
+                            <li>에이전트 실시간 실행 상태 (현재 명령어, 진행 스텝, 각 스텝의 액션 타입·대상 텍스트·AI 추론 내용·성공 여부·타임스탬프)</li>
+                        </ul>
+                    </li>
+                    <li><strong>제공 목적:</strong> Desktop-Mobile 연동, 원격 명령 전달, 실행 상태 실시간 모니터링</li>
+                    <li><strong>보유 기간:</strong> 세션 해제 시까지 (세션 해제 시 비활성화 처리)</li>
+                </ul>
+            </div>
+
+            <p>2. 위 경우를 제외하고 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제5조 (개인정보의 보유 및 이용 기간)</h2>
+
+            <p><strong>1. 기기 내 저장 데이터:</strong></p>
+            <ul>
+                <li>AI API 키: 사용자가 삭제하거나 앱을 제거할 때까지 (SharedPreferences)</li>
+                <li>실행 기록: 사용자가 '기록 삭제' 기능으로 삭제하거나 앱을 제거할 때까지 (기기 내 Room 데이터베이스, 파일명: agentdroid.db). 저장 항목: 명령어, 실행 상태, 결과 메시지, 전체 스텝 로그(JSON), 시작/종료 시간</li>
+                <li>에이전트 설정 및 동의 정보: 사용자가 변경하거나 앱을 제거할 때까지 (SharedPreferences)</li>
+            </ul>
+
+            <p><strong>2. 외부 전송 데이터:</strong></p>
+            <ul>
+                <li>AI API로 전송된 화면 데이터: 각 AI 서비스 제공자의 데이터 처리 정책에 따라 처리되며, 본 앱은 전송 후 해당 데이터를 보관하지 않습니다.</li>
+                <li>Firebase 실시간 실행 상태: 세션 연결 중 에이전트 실행 시 Firestore에 동기화되며, 세션 해제 시 비활성화 처리됩니다. 각 스텝의 대상 텍스트(targetText)에는 화면에서 조작한 UI 요소의 텍스트가 포함될 수 있습니다.</li>
+                <li>Firebase 세션 데이터: 세션 연결 해제 시 비활성화 처리</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제6조 (개인정보의 파기 절차 및 방법)</h2>
+
+            <ol>
+                <li><strong>파기 절차:</strong> 보유 기간이 경과하거나 처리 목적이 달성된 개인정보는 지체 없이 파기합니다.</li>
+                <li><strong>파기 방법:</strong>
+                    <ul>
+                        <li>기기 내 데이터: 앱 삭제(uninstall) 시 자동 삭제</li>
+                        <li>앱 내 '기록 삭제' 기능으로 실행 기록 삭제 가능</li>
+                        <li>세션 연결 해제 시 Firebase 세션 데이터 비활성화</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>제7조 (이용자의 권리·의무 및 행사 방법)</h2>
+
+            <p>1. 이용자는 언제든지 다음의 권리를 행사할 수 있습니다.</p>
+            <ul>
+                <li>앱 설정에서 API 키를 삭제·변경할 수 있습니다.</li>
+                <li>실행 기록을 삭제할 수 있습니다.</li>
+                <li>세션 연결을 해제할 수 있습니다.</li>
+                <li>접근성 서비스를 비활성화하여 화면 데이터 수집을 중단할 수 있습니다.</li>
+                <li>앱을 삭제하여 모든 기기 내 데이터를 파기할 수 있습니다.</li>
+            </ul>
+
+            <p>2. 동의 철회: 앱 내 설정에서 동의를 철회할 수 있으며, 철회 시 서비스 이용이 제한됩니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제8조 (개인정보의 안전성 확보 조치)</h2>
+
+            <p>본 앱은 다음과 같은 안전성 확보 조치를 취하고 있습니다.</p>
+
+            <p><strong>1. 기술적 조치:</strong></p>
+            <ul>
+                <li>모든 외부 통신은 HTTPS(TLS) 암호화를 통해 이루어집니다.</li>
+                <li>API 키는 기기 내 SharedPreferences에 저장되며, 외부로 전송되지 않습니다. (AI API 인증에만 사용)</li>
+                <li>화면 데이터는 AI 분석 요청 시 일시적으로만 사용되며 영구 저장되지 않습니다.</li>
+                <li>Firebase 익명 인증을 사용하여 최소한의 인증 정보만 관리합니다.</li>
+            </ul>
+
+            <p><strong>2. 관리적 조치:</strong></p>
+            <ul>
+                <li>개인정보 처리에 관한 정책을 수립하고 시행합니다.</li>
+                <li>접근성 API를 통해 수집된 데이터의 접근을 최소한으로 제한합니다.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제9조 (개인정보 보호책임자)</h2>
+
+            <p>개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보와 관련한 이용자의 불만 처리 및 피해 구제를 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
+
+            <div class="contact-info">
+                <p><strong>개인정보 보호책임자:</strong> 정재현</p>
+                <p><strong>이메일:</strong> j2hyeon02@gmail.com</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>제10조 (개인정보 처리방침 변경에 관한 사항)</h2>
+
+            <ol>
+                <li>이 개인정보 처리방침은 2026년 2월 26일부터 적용됩니다.</li>
+                <li>이전의 개인정보 처리방침은 아래에서 확인할 수 있습니다.
+                    <ul><li>해당 없음 (최초 시행)</li></ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>제11조 (권익침해 구제 방법)</h2>
+
+            <p>이용자는 개인정보 침해로 인한 구제를 받기 위하여 다음 기관에 분쟁 해결이나 상담을 신청할 수 있습니다.</p>
+            <ul>
+                <li>개인정보분쟁조정위원회: (국번없이) 1833-6972 (www.kopico.go.kr)</li>
+                <li>개인정보침해신고센터: (국번없이) 118 (privacy.kisa.or.kr)</li>
+                <li>대검찰청: (국번없이) 1301 (www.spo.go.kr)</li>
+                <li>경찰청: (국번없이) 182 (ecrm.cyber.go.kr)</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 AgentDroid. All rights reserved.</p>
+            <p style="margin-top: 8px;"><a href="terms-of-service.html">이용약관</a></p>
+        </footer>
+    </div>
+</body>
+</html>
