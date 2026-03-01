@@ -3,10 +3,7 @@
 ## 사전 준비
 
 1. **npm 계정 생성**: https://www.npmjs.com/signup
-2. **스코프 `@agentblue` 소유권**:  
-   - `@agentblue/cli`는 스코프 패키지입니다.  
-   - 처음 배포 시 npm에서 `agentblue` 조직을 만들거나, npm 사용자명이 `agentblue`여야 합니다.  
-   - 다른 이름 사용 시: `packages/cli/package.json`에서 `"name": "@your-username/cli"` 등으로 변경하세요.
+2. **스코프 `@agentblue`**: npm에서 `agentblue` 조직/스코프를 생성했다면 배포 가능합니다.
 
 ## 배포 절차
 
